@@ -12,7 +12,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class SoundManager {
 	private Clip backgroundClip;
 	private float backgroundGain = -20.0f; // Volume musique
-    private float effectGain = -25.0f;    // Volume effets	
+    private float effectGain = -30.0f;    // Volume effets	
 
     // Charger et jouer la musique de fond en boucle avec volume ajusté
     public void playBackgroundMusic(String fileName) {
