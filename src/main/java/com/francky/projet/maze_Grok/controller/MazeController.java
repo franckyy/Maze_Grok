@@ -2,7 +2,7 @@ package com.francky.projet.maze_Grok.controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.Timer;
+import javax.swing.Timer;
 
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.view.MazeView;
@@ -20,13 +20,11 @@ import com.francky.projet.maze_Grok.view.MazeView;
 public class MazeController {
 	private MazeModel model;
     private MazeView view;
-    private int cellSize; // Ajouté pour calculer les offsets
     private Timer moveTimer; // Timer pour l’animation
 
     public MazeController(MazeModel model, MazeView view) {
         this.model = model;
         this.view = view;
-        this.cellSize = view.getCellSize(); // Méthode à ajouter dans MazeView
         setupKeyBindings();
     }
 
@@ -66,6 +64,7 @@ public class MazeController {
         int steps = 10; // Nombre d’étapes pour l’animation
         int currentX = model.getPlayerX();
         int currentY = model.getPlayerY();
+        int cellSize = view.getCellSize(); // Récupéré dynamiquement
         float dx = (targetX - currentX) * cellSize / (float) steps; // Déplacement par étape en pixels
         float dy = (targetY - currentY) * cellSize / (float) steps;
 
