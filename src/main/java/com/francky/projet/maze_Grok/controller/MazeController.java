@@ -2,6 +2,7 @@ package com.francky.projet.maze_Grok.controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Timer;
 
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.view.MazeView;
@@ -47,5 +48,25 @@ public class MazeController {
                 view.repaint();
             }
         });
+    }
+
+    private void movePlayerSmoothly(int targetX, int targetY) {
+        Timer timer = new Timer(10, null); // 10ms par frame
+        int steps = 10; // Nombre d’étapes pour l’animation
+        int dx = (targetX - playerX) * CELL_SIZE / steps;
+        int dy = (targetY - playerY) * CELL_SIZE / steps;
+        int[] step = {0};
+        timer.addActionListener(e -> {
+            step[0]++;
+            view.setPlayerOffset(dx * step[0], dy * step[0]);
+            view.repaint();
+            if (step[0] >= steps) {
+                timer.stop();
+                model.setPlayerX(targetX);
+                model.setPlayerY(targetY);
+                view.setPlayerOffset(0, 0);
+            }
+        });
+        timer.start();
     }
 }
