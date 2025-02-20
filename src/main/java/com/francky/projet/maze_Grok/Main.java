@@ -44,7 +44,7 @@ public class Main {// Constantes pour les options de taille
         MazeController controller = new MazeController(model, view);
 
         // Configurer la fenêtre
-        JFrame frame = new JFrame("Maze Game");
+        JFrame frame = new JFrame("Amazing maze !");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(view);
         frame.pack();
