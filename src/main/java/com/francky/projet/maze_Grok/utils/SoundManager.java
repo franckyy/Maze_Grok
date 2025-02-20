@@ -11,6 +11,8 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class SoundManager {
 	private Clip backgroundClip;
+	private float backgroundGain = -20.0f; // Volume musique
+    private float effectGain = -25.0f;    // Volume effets	
 
     // Charger et jouer la musique de fond en boucle avec volume ajusté
     public void playBackgroundMusic(String fileName) {
@@ -22,7 +24,7 @@ public class SoundManager {
             backgroundClip.open(audioStream);
             
             FloatControl gainControl = (FloatControl) backgroundClip.getControl(FloatControl.Type.MASTER_GAIN);
-            gainControl.setValue(-20.0f); // Volume de la musique de fond
+            gainControl.setValue(backgroundGain);
             
             backgroundClip.loop(Clip.LOOP_CONTINUOUSLY);
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
@@ -52,11 +54,24 @@ public class SoundManager {
             
             // Ajuster le volume des effets sonores
             FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-            gainControl.setValue(-20.0f); // Réduit de 20 dB (ajustable)
-            
+            gainControl.setValue(effectGain);
             clip.start();
+            
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             e.printStackTrace();
         }
+    }
+    
+    // Méthodes pour ajuster dynamiquement si besoin
+    public void setBackgroundGain(float gain) {
+        this.backgroundGain = gain;
+        if (backgroundClip != null && backgroundClip.isRunning()) {
+            FloatControl gainControl = (FloatControl) backgroundClip.getControl(FloatControl.Type.MASTER_GAIN);
+            gainControl.setValue(gain);
+        }
+    }
+
+    public void setEffectGain(float gain) {
+        this.effectGain = gain;
     }
 }
