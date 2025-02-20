@@ -6,6 +6,15 @@ import java.awt.event.KeyEvent;
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.view.MazeView;
 
+//TODO
+/*
+ * Ajouter un effet visuel aux déplacements du joueur pour plus de fluidité
+ * Ajouter du son aux déplacements et à la victoire
+ * Ajouter un mode de difficulté (taille variable du labyrinthe)
+ * Ajouter des missions, ou des challenges en cours de chemin
+ * Ajouter des ennemis ou des bonus
+ */
+
 public class MazeController {
 	private MazeModel model;
     private MazeView view;
