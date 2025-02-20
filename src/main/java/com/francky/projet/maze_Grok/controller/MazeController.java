@@ -33,7 +33,7 @@ public class MazeController {
         this.directions = new boolean[4];
         this.soundManager = new SoundManager();
         setupKeyBindings();
-        soundManager.playBackgroundMusic("background.wav"); // Démarrer la musique de fond
+        soundManager.playBackgroundMusic("king_tubby_01.wav"); // Démarrer la musique de fond
     }
 
     private void setupKeyBindings() {
