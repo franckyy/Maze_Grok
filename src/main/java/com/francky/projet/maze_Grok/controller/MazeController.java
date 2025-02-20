@@ -132,7 +132,8 @@ public class MazeController {
                 view.setPlayerOffset(0, 0);
                 soundManager.playSoundEffect("blip.wav"); // Son de déplacement
                 if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                    soundManager.playSoundEffect("blip.wav"); // Son de victoire
+                	soundManager.stopBackgroundMusic();
+                    soundManager.playSoundEffect("organ.wav"); // Son de victoire
                 }
                 if (!isAnyDirectionPressed()) {
                     moveTimer.stop();
