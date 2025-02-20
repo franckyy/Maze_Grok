@@ -2,9 +2,11 @@ package com.francky.projet.maze_Grok.controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+
 import javax.swing.Timer;
 
 import com.francky.projet.maze_Grok.model.MazeModel;
+import com.francky.projet.maze_Grok.utils.SoundManager;
 import com.francky.projet.maze_Grok.view.MazeView;
 
 //TODO
@@ -21,14 +23,17 @@ public class MazeController {
 	private MazeModel model;
     private MazeView view;
     private Timer moveTimer;
-    private boolean[] directions; // Tableau pour suivre les touches maintenues (haut, bas, gauche, droite)
+    private boolean[] directions;
     private static final int[] DIRECTION_KEYS = {KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT};
+    private SoundManager soundManager;
 
     public MazeController(MazeModel model, MazeView view) {
         this.model = model;
         this.view = view;
-        this.directions = new boolean[4]; // 0: haut, 1: bas, 2: gauche, 3: droite
+        this.directions = new boolean[4];
+        this.soundManager = new SoundManager();
         setupKeyBindings();
+        soundManager.playBackgroundMusic("background.wav"); // Démarrer la musique de fond
     }
 
     private void setupKeyBindings() {
@@ -39,22 +44,23 @@ public class MazeController {
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
 
-                // Gestion des touches de direction
                 if (key == KeyEvent.VK_UP) directions[0] = true;
                 else if (key == KeyEvent.VK_DOWN) directions[1] = true;
                 else if (key == KeyEvent.VK_LEFT) directions[2] = true;
                 else if (key == KeyEvent.VK_RIGHT) directions[3] = true;
                 else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
+                    soundManager.stopBackgroundMusic(); // Arrêter la musique
                     MazeModel newModel = new MazeModel(model.getMazeWidth() / 2 - 1, model.getMazeHeight() / 2 - 1);
                     model = newModel;
                     stopMovement();
                     view.repaint();
+                    soundManager.playBackgroundMusic("background.wav"); // Redémarrer la musique
                     return;
                 } else if (key == KeyEvent.VK_Q) {
+                    soundManager.stopBackgroundMusic();
                     System.exit(0);
                 }
 
-                // Démarrer l’animation si elle n’est pas en cours
                 if (moveTimer == null || !moveTimer.isRunning()) {
                     startContinuousMovement();
                 }
@@ -68,7 +74,6 @@ public class MazeController {
                 else if (key == KeyEvent.VK_LEFT) directions[2] = false;
                 else if (key == KeyEvent.VK_RIGHT) directions[3] = false;
 
-                // Arrêter si plus aucune touche n’est enfoncée
                 if (!isAnyDirectionPressed() && moveTimer != null && moveTimer.isRunning()) {
                     moveTimer.stop();
                     view.setPlayerOffset(0, 0);
@@ -98,7 +103,7 @@ public class MazeController {
     private void startContinuousMovement() {
         int steps = 10;
         int cellSize = view.getCellSize();
-        float stepDuration = 10f; // ms par étape
+        float stepDuration = 10f;
 
         moveTimer = new Timer((int) stepDuration, null);
         int[] step = {0};
@@ -109,11 +114,10 @@ public class MazeController {
             int targetX = currentX;
             int targetY = currentY;
 
-            // Déterminer la direction prioritaire
-            if (directions[0] && model.getMazeCell(currentY - 1, currentX) == 0) targetY--; // Haut
-            else if (directions[1] && model.getMazeCell(currentY + 1, currentX) == 0) targetY++; // Bas
-            else if (directions[2] && model.getMazeCell(currentY, currentX - 1) == 0) targetX--; // Gauche
-            else if (directions[3] && model.getMazeCell(currentY, currentX + 1) == 0) targetX++; // Droite
+            if (directions[0] && model.getMazeCell(currentY - 1, currentX) == 0) targetY--;
+            else if (directions[1] && model.getMazeCell(currentY + 1, currentX) == 0) targetY++;
+            else if (directions[2] && model.getMazeCell(currentY, currentX - 1) == 0) targetX--;
+            else if (directions[3] && model.getMazeCell(currentY, currentX + 1) == 0) targetX++;
 
             float dx = (targetX - currentX) * cellSize / (float) steps;
             float dy = (targetY - currentY) * cellSize / (float) steps;
@@ -126,6 +130,10 @@ public class MazeController {
                 model.setPlayerX(targetX);
                 model.setPlayerY(targetY);
                 view.setPlayerOffset(0, 0);
+                soundManager.playSoundEffect("move.wav"); // Son de déplacement
+                if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
+                    soundManager.playSoundEffect("victory.wav"); // Son de victoire
+                }
                 if (!isAnyDirectionPressed()) {
                     moveTimer.stop();
                 }
