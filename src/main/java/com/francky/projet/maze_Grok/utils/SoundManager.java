@@ -21,9 +21,8 @@ public class SoundManager {
             backgroundClip = AudioSystem.getClip();
             backgroundClip.open(audioStream);
             
-            // Ajuster le volume (gain en dB)
             FloatControl gainControl = (FloatControl) backgroundClip.getControl(FloatControl.Type.MASTER_GAIN);
-            gainControl.setValue(-20.0f); // Réduit le volume de 20 dB (ajustable)
+            gainControl.setValue(-20.0f); // Volume de la musique de fond
             
             backgroundClip.loop(Clip.LOOP_CONTINUOUSLY);
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
@@ -39,14 +38,22 @@ public class SoundManager {
         }
     }
 
-    // Jouer un effet sonore (sans modification du volume ici)
+    // Jouer un effet sonore avec volume ajusté
     public void playSoundEffect(String fileName) {
         try {
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(
-                getClass().getResource("/com/francky/projet/maze_Grok/sounds/" + fileName)
-            );
+            java.net.URL soundURL = getClass().getResource("/com/francky/projet/maze_Grok/sounds/" + fileName);
+            if (soundURL == null) {
+                System.out.println("Erreur : Fichier audio non trouvé - " + fileName);
+                return;
+            }
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundURL);
             Clip clip = AudioSystem.getClip();
             clip.open(audioStream);
+            
+            // Ajuster le volume des effets sonores
+            FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+            gainControl.setValue(-20.0f); // Réduit de 20 dB (ajustable)
+            
             clip.start();
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             e.printStackTrace();

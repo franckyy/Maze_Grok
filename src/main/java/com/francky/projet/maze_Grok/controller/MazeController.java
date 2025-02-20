@@ -54,7 +54,7 @@ public class MazeController {
                     model = newModel;
                     stopMovement();
                     view.repaint();
-                    soundManager.playBackgroundMusic("background.wav"); // Redémarrer la musique
+                    soundManager.playBackgroundMusic("king_tubby_01.wav"); // Redémarrer la musique
                     return;
                 } else if (key == KeyEvent.VK_Q) {
                     soundManager.stopBackgroundMusic();
@@ -130,9 +130,9 @@ public class MazeController {
                 model.setPlayerX(targetX);
                 model.setPlayerY(targetY);
                 view.setPlayerOffset(0, 0);
-                soundManager.playSoundEffect("move.wav"); // Son de déplacement
+                soundManager.playSoundEffect("blip.wav"); // Son de déplacement
                 if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                    soundManager.playSoundEffect("victory.wav"); // Son de victoire
+                    soundManager.playSoundEffect("blip.wav"); // Son de victoire
                 }
                 if (!isAnyDirectionPressed()) {
                     moveTimer.stop();
