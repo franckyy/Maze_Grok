@@ -13,6 +13,7 @@ import com.francky.projet.maze_Grok.view.MazeView;
  * Ajouter un mode de difficulté (taille variable du labyrinthe)
  * Ajouter des missions, ou des challenges en cours de chemin
  * Ajouter des ennemis ou des bonus
+ * Lorsque l'on a réussi un labyrinthe, l'arrière plan des boutons "Rejouer" et "Arrêter" doit être transparent mais coloré (grisâtre ?)
  */
 
 public class MazeController {
