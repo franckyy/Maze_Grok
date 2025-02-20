@@ -23,16 +23,17 @@ public class MazeController {
                 int key = e.getKeyCode();
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
-                
-                if (key == KeyEvent.VK_UP && currentY > 0 && model.getMazeCell(currentY - 1, currentX) == 0) {
-                    model.setPlayerY(currentY - 1);
-                } else if (key == KeyEvent.VK_DOWN && currentY < model.getMazeHeight() - 1 && model.getMazeCell(currentY + 1, currentX) == 0) {
-                    model.setPlayerY(currentY + 1);
-                } else if (key == KeyEvent.VK_LEFT && currentX > 0 && model.getMazeCell(currentY, currentX - 1) == 0) {
-                    model.setPlayerX(currentX - 1);
-                } else if (key == KeyEvent.VK_RIGHT && currentX < model.getMazeWidth() - 1 && model.getMazeCell(currentY, currentX + 1) == 0) {
-                    model.setPlayerX(currentX + 1);
+
+                if (key == KeyEvent.VK_UP) model.setPlayerY(currentY - 1);
+                else if (key == KeyEvent.VK_DOWN) model.setPlayerY(currentY + 1);
+                else if (key == KeyEvent.VK_LEFT) model.setPlayerX(currentX - 1);
+                else if (key == KeyEvent.VK_RIGHT) model.setPlayerX(currentX + 1);
+                else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
+                    // Relancer avec "R"
+                    MazeModel newModel = new MazeModel(model.getMazeWidth() / 2 - 1, model.getMazeHeight() / 2 - 1);
+                    model = newModel;
                 }
+                else if (key == KeyEvent.VK_Q) System.exit(0); // Quitter avec "Q"
                 view.repaint();
             }
         });
