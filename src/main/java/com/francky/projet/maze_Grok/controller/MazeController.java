@@ -20,11 +20,14 @@ import com.francky.projet.maze_Grok.view.MazeView;
 public class MazeController {
 	private MazeModel model;
     private MazeView view;
-    private Timer moveTimer; // Timer pour l’animation
+    private Timer moveTimer;
+    private boolean[] directions; // Tableau pour suivre les touches maintenues (haut, bas, gauche, droite)
+    private static final int[] DIRECTION_KEYS = {KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT};
 
     public MazeController(MazeModel model, MazeView view) {
         this.model = model;
         this.view = view;
+        this.directions = new boolean[4]; // 0: haut, 1: bas, 2: gauche, 3: droite
         setupKeyBindings();
     }
 
@@ -36,50 +39,96 @@ public class MazeController {
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
 
-                // Arrêter toute animation en cours
-                if (moveTimer != null && moveTimer.isRunning()) {
-                    return; // Ignore les nouvelles touches pendant l’animation
-                }
-
-                if (key == KeyEvent.VK_UP && model.getMazeCell(currentY - 1, currentX) == 0) {
-                    movePlayerSmoothly(currentX, currentY - 1);
-                } else if (key == KeyEvent.VK_DOWN && model.getMazeCell(currentY + 1, currentX) == 0) {
-                    movePlayerSmoothly(currentX, currentY + 1);
-                } else if (key == KeyEvent.VK_LEFT && model.getMazeCell(currentY, currentX - 1) == 0) {
-                    movePlayerSmoothly(currentX - 1, currentY);
-                } else if (key == KeyEvent.VK_RIGHT && model.getMazeCell(currentY, currentX + 1) == 0) {
-                    movePlayerSmoothly(currentX + 1, currentY);
-                } else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
+                // Gestion des touches de direction
+                if (key == KeyEvent.VK_UP) directions[0] = true;
+                else if (key == KeyEvent.VK_DOWN) directions[1] = true;
+                else if (key == KeyEvent.VK_LEFT) directions[2] = true;
+                else if (key == KeyEvent.VK_RIGHT) directions[3] = true;
+                else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
                     MazeModel newModel = new MazeModel(model.getMazeWidth() / 2 - 1, model.getMazeHeight() / 2 - 1);
                     model = newModel;
+                    stopMovement();
                     view.repaint();
+                    return;
                 } else if (key == KeyEvent.VK_Q) {
                     System.exit(0);
+                }
+
+                // Démarrer l’animation si elle n’est pas en cours
+                if (moveTimer == null || !moveTimer.isRunning()) {
+                    startContinuousMovement();
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                int key = e.getKeyCode();
+                if (key == KeyEvent.VK_UP) directions[0] = false;
+                else if (key == KeyEvent.VK_DOWN) directions[1] = false;
+                else if (key == KeyEvent.VK_LEFT) directions[2] = false;
+                else if (key == KeyEvent.VK_RIGHT) directions[3] = false;
+
+                // Arrêter si plus aucune touche n’est enfoncée
+                if (!isAnyDirectionPressed() && moveTimer != null && moveTimer.isRunning()) {
+                    moveTimer.stop();
+                    view.setPlayerOffset(0, 0);
+                    view.repaint();
                 }
             }
         });
     }
 
-    private void movePlayerSmoothly(int targetX, int targetY) {
-        int steps = 10; // Nombre d’étapes pour l’animation
-        int currentX = model.getPlayerX();
-        int currentY = model.getPlayerY();
-        int cellSize = view.getCellSize(); // Récupéré dynamiquement
-        float dx = (targetX - currentX) * cellSize / (float) steps; // Déplacement par étape en pixels
-        float dy = (targetY - currentY) * cellSize / (float) steps;
+    private boolean isAnyDirectionPressed() {
+        for (boolean direction : directions) {
+            if (direction) return true;
+        }
+        return false;
+    }
 
-        moveTimer = new Timer(10, null); // 10ms par frame
-        int[] step = {0}; // Compteur d’étapes
+    private void stopMovement() {
+        if (moveTimer != null && moveTimer.isRunning()) {
+            moveTimer.stop();
+        }
+        view.setPlayerOffset(0, 0);
+        for (int i = 0; i < directions.length; i++) {
+            directions[i] = false;
+        }
+    }
+
+    private void startContinuousMovement() {
+        int steps = 10;
+        int cellSize = view.getCellSize();
+        float stepDuration = 10f; // ms par étape
+
+        moveTimer = new Timer((int) stepDuration, null);
+        int[] step = {0};
         moveTimer.addActionListener(e -> {
             step[0]++;
-            view.setPlayerOffset(dx * step[0], dy * step[0]); // Décalage temporaire
+            int currentX = model.getPlayerX();
+            int currentY = model.getPlayerY();
+            int targetX = currentX;
+            int targetY = currentY;
+
+            // Déterminer la direction prioritaire
+            if (directions[0] && model.getMazeCell(currentY - 1, currentX) == 0) targetY--; // Haut
+            else if (directions[1] && model.getMazeCell(currentY + 1, currentX) == 0) targetY++; // Bas
+            else if (directions[2] && model.getMazeCell(currentY, currentX - 1) == 0) targetX--; // Gauche
+            else if (directions[3] && model.getMazeCell(currentY, currentX + 1) == 0) targetX++; // Droite
+
+            float dx = (targetX - currentX) * cellSize / (float) steps;
+            float dy = (targetY - currentY) * cellSize / (float) steps;
+
+            view.setPlayerOffset(dx * step[0], dy * step[0]);
             view.repaint();
+
             if (step[0] >= steps) {
-                moveTimer.stop();
-                model.setPlayerX(targetX); // Position finale dans le modèle
+                step[0] = 0;
+                model.setPlayerX(targetX);
                 model.setPlayerY(targetY);
-                view.setPlayerOffset(0, 0); // Réinitialiser le décalage
-                view.repaint();
+                view.setPlayerOffset(0, 0);
+                if (!isAnyDirectionPressed()) {
+                    moveTimer.stop();
+                }
             }
         });
         moveTimer.start();
