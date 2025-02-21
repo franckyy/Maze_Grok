@@ -33,7 +33,16 @@ public class MazeController {
         this.directions = new boolean[4];
         this.soundManager = new SoundManager();
         setupKeyBindings();
-        soundManager.playBackgroundMusic("king_tubby_01.wav"); // Démarrer la musique de fond
+        soundManager.playBackgroundMusic("king_tubby_01.wav");
+    }
+
+    // Nouvelle méthode pour mettre à jour le modèle
+    public void setModel(MazeModel newModel) {
+        this.model = newModel;
+        stopMovement(); // Réinitialiser l’état du déplacement
+        view.setPlayerOffset(0, 0); // Réinitialiser les offsets visuels
+        view.repaint(); // Redessiner avec le nouveau modèle
+        view.requestFocusInWindow(); // S’assurer que la vue a le focus
     }
 
     private void setupKeyBindings() {
@@ -49,12 +58,10 @@ public class MazeController {
                 else if (key == KeyEvent.VK_LEFT) directions[2] = true;
                 else if (key == KeyEvent.VK_RIGHT) directions[3] = true;
                 else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                    soundManager.stopBackgroundMusic(); // Arrêter la musique
+                    soundManager.stopBackgroundMusic();
                     MazeModel newModel = new MazeModel(model.getMazeWidth() / 2 - 1, model.getMazeHeight() / 2 - 1);
-                    model = newModel;
-                    stopMovement();
-                    view.repaint();
-                    soundManager.playBackgroundMusic("king_tubby_01.wav"); // Redémarrer la musique
+                    setModel(newModel); // Utiliser la nouvelle méthode
+                    soundManager.playBackgroundMusic("king_tubby_01.wav");
                     return;
                 } else if (key == KeyEvent.VK_Q) {
                     soundManager.stopBackgroundMusic();
@@ -130,10 +137,10 @@ public class MazeController {
                 model.setPlayerX(targetX);
                 model.setPlayerY(targetY);
                 view.setPlayerOffset(0, 0);
-                soundManager.playSoundEffect("blip.wav"); // Son de déplacement
+                soundManager.playSoundEffect("blip.wav");
                 if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                	soundManager.stopBackgroundMusic();
-                    soundManager.playSoundEffect("organ.wav"); // Son de victoire
+                    soundManager.stopBackgroundMusic();
+                    soundManager.playSoundEffect("organ.wav");
                 }
                 if (!isAnyDirectionPressed()) {
                     moveTimer.stop();
