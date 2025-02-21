@@ -10,6 +10,7 @@ public class SoundManager {
     private float effectGain = -30.0f;
 
     public void playBackgroundMusic(String fileName) {
+        stopBackgroundMusic(); // Arrêter tout fond existant avant de jouer
         try {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(
                 getClass().getResource("/com/francky/projet/maze_Grok/sounds/" + fileName)

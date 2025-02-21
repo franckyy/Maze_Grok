@@ -18,7 +18,7 @@ public class MazeView extends JPanel {
     private SoundManager soundManager;
     private int CELL_SIZE;
     private final int PLAYER_SIZE_RATIO = 2;
-    private JButton replayButton;
+    private JButton nextLevelButton;
     private JButton quitButton;
     private boolean gameWon = false;
     private float offsetX = 0, offsetY = 0;
@@ -46,14 +46,16 @@ public class MazeView extends JPanel {
     }
 
     private void initButtons() {
-        replayButton = new JButton("Rejouer");
+        nextLevelButton = new JButton("Niveau suivant");
         quitButton = new JButton("Quitter");
-        replayButton.setVisible(false);
+        nextLevelButton.setVisible(false);
         quitButton.setVisible(false);
-        add(replayButton);
+        add(nextLevelButton);
         add(quitButton);
 
-        replayButton.addActionListener(e -> restartGame());
+        nextLevelButton.addActionListener(e -> {
+            controller.nextLevel();
+        });
         quitButton.addActionListener(e -> {
             soundManager.stopBackgroundMusic();
             if (controller != null && controller.wallMoveTimer != null) controller.wallMoveTimer.stop();
@@ -64,12 +66,12 @@ public class MazeView extends JPanel {
 
     private void restartGame() {
         soundManager.stopBackgroundMusic();
-        model = new MazeModel(controller.getLevel()); // Utiliser getLevel()
+        model = new MazeModel(controller.getLevel());
         if (controller != null) {
             controller.setModel(model);
         }
         gameWon = false;
-        replayButton.setVisible(false);
+        nextLevelButton.setVisible(false);
         quitButton.setVisible(false);
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         repaint();
@@ -89,6 +91,26 @@ public class MazeView extends JPanel {
             }
         });
         animationTimer.start();
+    }
+
+    public void resetView() {
+        gameWon = false;
+        nextLevelButton.setVisible(false);
+        quitButton.setVisible(false);
+        System.out.println("Vue réinitialisée pour le niveau " + controller.getLevel());
+    }
+
+    public void setGameWon(boolean won) {
+        gameWon = won;
+        repaint();
+    }
+
+    public boolean isGameWon() {
+        return gameWon;
+    }
+
+    public void setModel(MazeModel newModel) {
+        this.model = newModel;
     }
 
     @Override
@@ -111,7 +133,7 @@ public class MazeView extends JPanel {
         }
 
         if (model.getTrapX() != -1 && model.getTrapY() != -1) {
-            g2d.setColor(Color.BLACK);
+            g2d.setColor(model.isTrapOpen() ? Color.BLACK : Color.WHITE);
             int trapX = model.getTrapX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
             int trapY = model.getTrapY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
             g2d.fillRect(trapX, trapY, PLAYER_SIZE, PLAYER_SIZE);
@@ -128,8 +150,7 @@ public class MazeView extends JPanel {
         int playerSize = trapAnimation ? PLAYER_SIZE * trapAnimationStep / 10 : PLAYER_SIZE;
         g2d.fillOval(playerX, playerY, playerSize, playerSize);
 
-        if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-            gameWon = true;
+        if (gameWon) {
             g2d.setFont(new Font("Arial", Font.BOLD, 30));
             int rectWidth = 120 + CELL_SIZE;
             int rectHeight = 40 + CELL_SIZE;
@@ -143,11 +164,12 @@ public class MazeView extends JPanel {
             int textY = rectY + (rectHeight + 10) / 2 + 5;
             g2d.drawString("Gagné !", textX, textY);
 
-            replayButton.setBounds(getWidth() / 2 - 100, getHeight() / 2 + 20, 80, 30);
-            quitButton.setBounds(getWidth() / 2 + 20, getHeight() / 2 + 20, 80, 30);
-            replayButton.setVisible(true);
+            nextLevelButton.setBounds(getWidth() / 2 - 100, getHeight() / 2 + 20, 120, 30);
+            quitButton.setBounds(getWidth() / 2 + 40, getHeight() / 2 + 20, 80, 30);
+            nextLevelButton.setVisible(true);
             quitButton.setVisible(true);
         }
+        System.out.println("Rendu de MazeView - gameWon: " + gameWon);
     }
 
     private void drawBrickWall(Graphics2D g2d, int x, int y, int size) {

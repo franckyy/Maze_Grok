@@ -22,7 +22,7 @@ public class Main {
         }
 
         int level = loadPlayerLevel(playerName);
-        MazeModel model = new MazeModel(level); // Taille gérée par MazeModel
+        MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
         MazeController controller = new MazeController(model, view, level, playerName);
         view.setController(controller);

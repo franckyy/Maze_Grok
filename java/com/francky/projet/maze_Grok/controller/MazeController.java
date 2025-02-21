@@ -3,6 +3,7 @@ package com.francky.projet.maze_Grok.controller;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
+import javax.swing.JFrame; // Import ajouté pour le cast
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
@@ -15,14 +16,17 @@ public class MazeController {
     private MazeModel model;
     private MazeView view;
     private Timer moveTimer;
-    public Timer wallMoveTimer; // Public pour MazeView
-    public Timer wallChangeTimer; // Public pour MazeView
+    public Timer wallMoveTimer;
+    public Timer wallChangeTimer;
+    private Timer trapTimer;
     private boolean[] directions;
     private static final int[] DIRECTION_KEYS = {KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT};
     private SoundManager soundManager;
-    private int level; // Package-private par défaut, pas besoin de changer
+    private int level;
     private String playerName;
     private int lives = 3;
+    private static final int TRAP_CYCLE = 8000;
+    private boolean gameOver = false;
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
@@ -34,11 +38,6 @@ public class MazeController {
         setupKeyBindings();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         setupLevelTimers();
-    }
-
-    // Nouvelle méthode pour accéder au niveau
-    public int getLevel() {
-        return level;
     }
 
     private void setupLevelTimers() {
@@ -59,6 +58,17 @@ public class MazeController {
             wallChangeTimer.setInitialDelay(5000);
             wallChangeTimer.start();
         }
+        if (level >= 6) {
+            trapTimer = new Timer(TRAP_CYCLE, e -> {
+                model.toggleTrap();
+                view.repaint();
+            });
+            trapTimer.start();
+        }
+    }
+
+    public int getLevel() {
+        return level;
     }
 
     public void setModel(MazeModel newModel) {
@@ -66,16 +76,22 @@ public class MazeController {
         stopMovement();
         if (wallMoveTimer != null) wallMoveTimer.stop();
         if (wallChangeTimer != null) wallChangeTimer.stop();
+        if (trapTimer != null) trapTimer.stop();
         view.setPlayerOffset(0, 0);
+        view.setModel(newModel);
+        view.resetView();
         view.repaint();
         view.requestFocusInWindow();
         setupLevelTimers();
+        gameOver = false;
+        System.out.println("Modèle mis à jour pour le niveau " + level);
     }
 
     private void setupKeyBindings() {
         view.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                if (gameOver) return;
                 int key = e.getKeyCode();
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
@@ -91,6 +107,7 @@ public class MazeController {
                     soundManager.stopBackgroundMusic();
                     if (wallMoveTimer != null) wallMoveTimer.stop();
                     if (wallChangeTimer != null) wallChangeTimer.stop();
+                    if (trapTimer != null) trapTimer.stop();
                     System.exit(0);
                 }
 
@@ -101,6 +118,7 @@ public class MazeController {
 
             @Override
             public void keyReleased(KeyEvent e) {
+                if (gameOver) return;
                 int key = e.getKeyCode();
                 if (key == KeyEvent.VK_UP) directions[0] = false;
                 else if (key == KeyEvent.VK_DOWN) directions[1] = false;
@@ -141,6 +159,10 @@ public class MazeController {
         moveTimer = new Timer((int) stepDuration, null);
         int[] step = {0};
         moveTimer.addActionListener(e -> {
+            if (gameOver) {
+                moveTimer.stop();
+                return;
+            }
             step[0]++;
             int currentX = model.getPlayerX();
             int currentY = model.getPlayerY();
@@ -166,9 +188,13 @@ public class MazeController {
                 soundManager.playSoundEffect("blip.wav");
                 checkTrapCollision();
                 if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                    nextLevel();
+                    soundManager.stopBackgroundMusic();
+                    soundManager.playSoundEffect("organ.wav");
+                    view.setGameWon(true);
+                    gameOver = true;
+                    stopMovement();
                 }
-                if (!isAnyDirectionPressed()) {
+                if (!isAnyDirectionPressed() && !gameOver) {
                     moveTimer.stop();
                 }
             }
@@ -177,13 +203,14 @@ public class MazeController {
     }
 
     private void checkTrapCollision() {
-        if (level >= 6 && model.getPlayerX() == model.getTrapX() && model.getPlayerY() == model.getTrapY()) {
+        if (level >= 6 && model.getPlayerX() == model.getTrapX() && model.getPlayerY() == model.getTrapY() && model.isTrapOpen()) {
             lives--;
             if (lives <= 0) {
                 JOptionPane.showMessageDialog(null, "Game Over ! Plus de vies.", "Défaite", JOptionPane.ERROR_MESSAGE);
                 soundManager.stopBackgroundMusic();
                 if (wallMoveTimer != null) wallMoveTimer.stop();
                 if (wallChangeTimer != null) wallChangeTimer.stop();
+                if (trapTimer != null) trapTimer.stop();
                 System.exit(0);
             } else {
                 view.startTrapAnimation(() -> {
@@ -195,14 +222,13 @@ public class MazeController {
         }
     }
 
-    private void nextLevel() {
-        soundManager.stopBackgroundMusic();
+    public void nextLevel() {
+        System.out.println("Passage au niveau suivant : " + (level + 1));
         level++;
         MazeModel newModel = new MazeModel(level);
         setModel(newModel);
-        soundManager.playSoundEffect("organ.wav");
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         Main.savePlayerLevel(playerName, level);
-        view.getTopLevelAncestor().setName("Amazing Maze - Niveau " + level);
+        ((JFrame) view.getTopLevelAncestor()).setTitle("Amazing Maze - Niveau " + level); // Cast en JFrame et utilisation de setTitle
     }
 }

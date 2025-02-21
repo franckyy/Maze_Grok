@@ -9,9 +9,10 @@ public class MazeModel {
     private int exitX, exitY;
     private int movingWallX, movingWallY;
     private int trapX, trapY;
+    private boolean trapOpen = false; // État de la trappe
 
     public MazeModel(int level) {
-        int size = getSizeForLevel(level); // Utiliser la taille selon le niveau
+        int size = getSizeForLevel(level) / 2; // Divisé par 2 pour obtenir la taille intérieure
         maze = new int[2 * size + 1][2 * size + 1];
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
@@ -63,11 +64,10 @@ public class MazeModel {
         }
     }
 
-    // Nouvelle méthode pour déterminer la taille selon le niveau
     public static int getSizeForLevel(int level) {
         switch (level) {
-            case 1: return 10;
-            case 2: return 12;
+            case 1: return 10; // 10x10 intérieur -> 11x11 total
+            case 2: return 12; // 12x12 intérieur -> 13x13 total
             case 3: return 14;
             case 4: return 16;
             case 5: return 18;
@@ -160,6 +160,10 @@ public class MazeModel {
         maze[movingWallY][movingWallX] = 1;
     }
 
+    public void toggleTrap() {
+        trapOpen = !trapOpen;
+    }
+
     public int getPlayerX() { return playerX; }
     public void setPlayerX(int x) {
         if (x >= 0 && x < maze[0].length && maze[playerY][x] == 0) playerX = x;
@@ -178,4 +182,5 @@ public class MazeModel {
     public int getExitY() { return exitY; }
     public int getTrapX() { return trapX; }
     public int getTrapY() { return trapY; }
+    public boolean isTrapOpen() { return trapOpen; }
 }
