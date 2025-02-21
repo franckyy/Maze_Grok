@@ -1,46 +1,33 @@
 package com.francky.projet.maze_Grok;
 
 import java.awt.Dimension;
-
+import java.io.*;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-
 import com.francky.projet.maze_Grok.controller.MazeController;
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.view.MazeView;
 
-public class Main {// Constantes pour les options de taille
-	private static final String[] SIZE_OPTIONS = {"10 x 10", "20 x 20", "30 x 30"};
-
+public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> createAndShowGUI());
     }
 
     private static void createAndShowGUI() {
-        String selectedSize = (String) JOptionPane.showInputDialog(
-            null,
-            "Choisissez la taille du labyrinthe :",
-            "Taille du labyrinthe",
-            JOptionPane.QUESTION_MESSAGE,
-            null,
-            SIZE_OPTIONS,
-            SIZE_OPTIONS[0]
-        );
-
-        if (selectedSize == null) {
+        String playerName = JOptionPane.showInputDialog(null, "Entrez votre prénom :", "Bienvenue", JOptionPane.PLAIN_MESSAGE);
+        if (playerName == null || playerName.trim().isEmpty()) {
             JOptionPane.showMessageDialog(null, "Au revoir !", "Fermeture", JOptionPane.INFORMATION_MESSAGE);
             System.exit(0);
         }
 
-        int size = parseSize(selectedSize);
+        int level = loadPlayerLevel(playerName);
+        MazeModel model = new MazeModel(level); // Taille gérée par MazeModel
+        MazeView view = new MazeView(model);
+        MazeController controller = new MazeController(model, view, level, playerName);
+        view.setController(controller);
 
-        MazeModel model = new MazeModel(size / 2, size / 2);
-        MazeView view = new MazeView(model, size);
-        MazeController controller = new MazeController(model, view);
-        view.setController(controller); // Lier le contrôleur à la vue
-
-        JFrame frame = new JFrame("Amazing maze !");
+        JFrame frame = new JFrame("Amazing Maze - Niveau " + level);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(view);
         frame.pack();
@@ -51,12 +38,19 @@ public class Main {// Constantes pour les options de taille
         view.requestFocusInWindow();
     }
 
-    private static int parseSize(String selectedSize) {
-        switch (selectedSize) {
-            case "10 x 10": return 10;
-            case "20 x 20": return 20;
-            case "30 x 30": return 30;
-            default: return 10;
+    private static int loadPlayerLevel(String playerName) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(playerName + "_level.txt"))) {
+            return Integer.parseInt(reader.readLine());
+        } catch (IOException | NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    public static void savePlayerLevel(String playerName, int level) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(playerName + "_level.txt"))) {
+            writer.write(String.valueOf(level));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

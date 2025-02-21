@@ -3,46 +3,73 @@ package com.francky.projet.maze_Grok.controller;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
+import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
+import com.francky.projet.maze_Grok.Main;
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.utils.SoundManager;
 import com.francky.projet.maze_Grok.view.MazeView;
 
-//TODO
-/*
- * Ajouter un effet visuel aux déplacements du joueur pour plus de fluidité
- * Ajouter du son aux déplacements et à la victoire
- * Ajouter un mode de difficulté (taille variable du labyrinthe)
- * Ajouter des missions, ou des challenges en cours de chemin
- * Ajouter des ennemis ou des bonus
- * Lorsque l'on a réussi un labyrinthe, l'arrière plan des boutons "Rejouer" et "Arrêter" doit être transparent mais coloré (grisâtre ?)
- */
-
 public class MazeController {
-	private MazeModel model;
+    private MazeModel model;
     private MazeView view;
     private Timer moveTimer;
+    public Timer wallMoveTimer; // Public pour MazeView
+    public Timer wallChangeTimer; // Public pour MazeView
     private boolean[] directions;
     private static final int[] DIRECTION_KEYS = {KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT};
     private SoundManager soundManager;
+    private int level; // Package-private par défaut, pas besoin de changer
+    private String playerName;
+    private int lives = 3;
 
-    public MazeController(MazeModel model, MazeView view) {
+    public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
         this.view = view;
+        this.level = level;
+        this.playerName = playerName;
         this.directions = new boolean[4];
         this.soundManager = new SoundManager();
         setupKeyBindings();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
+        setupLevelTimers();
     }
 
-    // Nouvelle méthode pour mettre à jour le modèle
+    // Nouvelle méthode pour accéder au niveau
+    public int getLevel() {
+        return level;
+    }
+
+    private void setupLevelTimers() {
+        if (level >= 3) {
+            int moveDelay = (level == 3) ? 4000 : 10000;
+            wallMoveTimer = new Timer(moveDelay, e -> {
+                model.moveWall();
+                view.repaint();
+            });
+            wallMoveTimer.start();
+        }
+        if (level >= 4) {
+            wallChangeTimer = new Timer(15000, e -> {
+                model.createRandomWall();
+                model.breakRandomWall();
+                view.repaint();
+            });
+            wallChangeTimer.setInitialDelay(5000);
+            wallChangeTimer.start();
+        }
+    }
+
     public void setModel(MazeModel newModel) {
         this.model = newModel;
-        stopMovement(); // Réinitialiser l’état du déplacement
-        view.setPlayerOffset(0, 0); // Réinitialiser les offsets visuels
-        view.repaint(); // Redessiner avec le nouveau modèle
-        view.requestFocusInWindow(); // S’assurer que la vue a le focus
+        stopMovement();
+        if (wallMoveTimer != null) wallMoveTimer.stop();
+        if (wallChangeTimer != null) wallChangeTimer.stop();
+        view.setPlayerOffset(0, 0);
+        view.repaint();
+        view.requestFocusInWindow();
+        setupLevelTimers();
     }
 
     private void setupKeyBindings() {
@@ -58,13 +85,12 @@ public class MazeController {
                 else if (key == KeyEvent.VK_LEFT) directions[2] = true;
                 else if (key == KeyEvent.VK_RIGHT) directions[3] = true;
                 else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                    soundManager.stopBackgroundMusic();
-                    MazeModel newModel = new MazeModel(model.getMazeWidth() / 2 - 1, model.getMazeHeight() / 2 - 1);
-                    setModel(newModel); // Utiliser la nouvelle méthode
-                    soundManager.playBackgroundMusic("king_tubby_01.wav");
+                    nextLevel();
                     return;
                 } else if (key == KeyEvent.VK_Q) {
                     soundManager.stopBackgroundMusic();
+                    if (wallMoveTimer != null) wallMoveTimer.stop();
+                    if (wallChangeTimer != null) wallChangeTimer.stop();
                     System.exit(0);
                 }
 
@@ -138,9 +164,9 @@ public class MazeController {
                 model.setPlayerY(targetY);
                 view.setPlayerOffset(0, 0);
                 soundManager.playSoundEffect("blip.wav");
+                checkTrapCollision();
                 if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                    soundManager.stopBackgroundMusic();
-                    soundManager.playSoundEffect("organ.wav");
+                    nextLevel();
                 }
                 if (!isAnyDirectionPressed()) {
                     moveTimer.stop();
@@ -148,5 +174,35 @@ public class MazeController {
             }
         });
         moveTimer.start();
+    }
+
+    private void checkTrapCollision() {
+        if (level >= 6 && model.getPlayerX() == model.getTrapX() && model.getPlayerY() == model.getTrapY()) {
+            lives--;
+            if (lives <= 0) {
+                JOptionPane.showMessageDialog(null, "Game Over ! Plus de vies.", "Défaite", JOptionPane.ERROR_MESSAGE);
+                soundManager.stopBackgroundMusic();
+                if (wallMoveTimer != null) wallMoveTimer.stop();
+                if (wallChangeTimer != null) wallChangeTimer.stop();
+                System.exit(0);
+            } else {
+                view.startTrapAnimation(() -> {
+                    model.setPlayerX(0);
+                    model.setPlayerY(1);
+                    view.repaint();
+                });
+            }
+        }
+    }
+
+    private void nextLevel() {
+        soundManager.stopBackgroundMusic();
+        level++;
+        MazeModel newModel = new MazeModel(level);
+        setModel(newModel);
+        soundManager.playSoundEffect("organ.wav");
+        soundManager.playBackgroundMusic("king_tubby_01.wav");
+        Main.savePlayerLevel(playerName, level);
+        view.getTopLevelAncestor().setName("Amazing Maze - Niveau " + level);
     }
 }

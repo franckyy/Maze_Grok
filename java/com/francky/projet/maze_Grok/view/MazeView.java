@@ -5,37 +5,33 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-
 import javax.swing.JButton;
 import javax.swing.JPanel;
-
+import javax.swing.Timer;
 import com.francky.projet.maze_Grok.controller.MazeController;
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.utils.SoundManager;
 
 public class MazeView extends JPanel {
-	private MazeModel model;
-    private MazeController controller; // Référence au contrôleur
-    private SoundManager soundManager; // Ajout pour gérer les sons
+    private MazeModel model;
+    private MazeController controller;
+    private SoundManager soundManager;
     private int CELL_SIZE;
     private final int PLAYER_SIZE_RATIO = 2;
     private JButton replayButton;
     private JButton quitButton;
     private boolean gameWon = false;
     private float offsetX = 0, offsetY = 0;
+    private boolean trapAnimation = false;
+    private int trapAnimationStep = 0;
 
     public MazeView(MazeModel model) {
-        this(model, 10);
-    }
-
-    public MazeView(MazeModel model, int mazeSize) {
         this.model = model;
-        this.soundManager = new SoundManager(); // Initialisation
+        this.soundManager = new SoundManager();
         setPreferredSize(new Dimension(600, 600));
         initButtons();
     }
 
-    // Ajouter une méthode pour définir le contrôleur
     public void setController(MazeController controller) {
         this.controller = controller;
     }
@@ -58,21 +54,41 @@ public class MazeView extends JPanel {
         add(quitButton);
 
         replayButton.addActionListener(e -> restartGame());
-        quitButton.addActionListener(e -> System.exit(0));
+        quitButton.addActionListener(e -> {
+            soundManager.stopBackgroundMusic();
+            if (controller != null && controller.wallMoveTimer != null) controller.wallMoveTimer.stop();
+            if (controller != null && controller.wallChangeTimer != null) controller.wallChangeTimer.stop();
+            System.exit(0);
+        });
     }
 
     private void restartGame() {
-        soundManager.stopBackgroundMusic(); // Arrêter la musique actuelle
-        model = new MazeModel(model.getMazeWidth() / 2 - 1, model.getMazeHeight() / 2 - 1);
+        soundManager.stopBackgroundMusic();
+        model = new MazeModel(controller.getLevel()); // Utiliser getLevel()
         if (controller != null) {
-            controller.setModel(model); // Mettre à jour le modèle dans le contrôleur
+            controller.setModel(model);
         }
         gameWon = false;
         replayButton.setVisible(false);
         quitButton.setVisible(false);
-        soundManager.playBackgroundMusic("king_tubby_01.wav"); // Redémarrer la musique
+        soundManager.playBackgroundMusic("king_tubby_01.wav");
         repaint();
-        requestFocusInWindow(); // S’assurer que la vue a le focus
+        requestFocusInWindow();
+    }
+
+    public void startTrapAnimation(Runnable onFinished) {
+        trapAnimation = true;
+        trapAnimationStep = 10;
+        Timer animationTimer = new Timer(50, e -> {
+            trapAnimationStep--;
+            repaint();
+            if (trapAnimationStep <= 0) {
+                ((Timer) e.getSource()).stop();
+                trapAnimation = false;
+                onFinished.run();
+            }
+        });
+        animationTimer.start();
     }
 
     @Override
@@ -94,6 +110,13 @@ public class MazeView extends JPanel {
             }
         }
 
+        if (model.getTrapX() != -1 && model.getTrapY() != -1) {
+            g2d.setColor(Color.BLACK);
+            int trapX = model.getTrapX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
+            int trapY = model.getTrapY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
+            g2d.fillRect(trapX, trapY, PLAYER_SIZE, PLAYER_SIZE);
+        }
+
         g2d.setColor(Color.GREEN);
         int exitX = model.getExitX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
         int exitY = model.getExitY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
@@ -102,7 +125,8 @@ public class MazeView extends JPanel {
         g2d.setColor(Color.RED);
         int playerX = model.getPlayerX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetX;
         int playerY = model.getPlayerY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetY;
-        g2d.fillOval(playerX, playerY, PLAYER_SIZE, PLAYER_SIZE);
+        int playerSize = trapAnimation ? PLAYER_SIZE * trapAnimationStep / 10 : PLAYER_SIZE;
+        g2d.fillOval(playerX, playerY, playerSize, playerSize);
 
         if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
             gameWon = true;
