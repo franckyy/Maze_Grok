@@ -3,7 +3,7 @@ package com.francky.projet.maze_Grok.controller;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
-import javax.swing.JFrame; // Import ajouté pour le cast
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
@@ -229,6 +229,6 @@ public class MazeController {
         setModel(newModel);
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         Main.savePlayerLevel(playerName, level);
-        ((JFrame) view.getTopLevelAncestor()).setTitle("Amazing Maze - Niveau " + level); // Cast en JFrame et utilisation de setTitle
+        ((JFrame) view.getTopLevelAncestor()).setTitle("Amazing Maze - Niveau " + level);
     }
 }
