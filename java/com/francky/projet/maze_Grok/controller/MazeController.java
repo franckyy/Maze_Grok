@@ -16,9 +16,8 @@ public class MazeController {
     private MazeModel model;
     private MazeView view;
     private Timer moveTimer;
-    public Timer wallMoveTimer;
     public Timer wallChangeTimer;
-    private Timer trapTimer;
+    public Timer trapTimer; // Changé de private à public
     private boolean[] directions;
     private static final int[] DIRECTION_KEYS = {KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT};
     private SoundManager soundManager;
@@ -41,18 +40,9 @@ public class MazeController {
     }
 
     private void setupLevelTimers() {
-        if (level >= 3) {
-            int moveDelay = (level == 3) ? 4000 : 10000;
-            wallMoveTimer = new Timer(moveDelay, e -> {
-                model.moveWall();
-                view.repaint();
-            });
-            wallMoveTimer.start();
-        }
         if (level >= 4) {
-            wallChangeTimer = new Timer(15000, e -> {
-                model.createRandomWall();
-                model.breakRandomWall();
+            wallChangeTimer = new Timer(10000, e -> {
+                model.modifyPath();
                 view.repaint();
             });
             wallChangeTimer.setInitialDelay(5000);
@@ -74,7 +64,6 @@ public class MazeController {
     public void setModel(MazeModel newModel) {
         this.model = newModel;
         stopMovement();
-        if (wallMoveTimer != null) wallMoveTimer.stop();
         if (wallChangeTimer != null) wallChangeTimer.stop();
         if (trapTimer != null) trapTimer.stop();
         view.setPlayerOffset(0, 0);
@@ -84,7 +73,6 @@ public class MazeController {
         view.requestFocusInWindow();
         setupLevelTimers();
         gameOver = false;
-        System.out.println("Modèle mis à jour pour le niveau " + level);
     }
 
     private void setupKeyBindings() {
@@ -105,7 +93,6 @@ public class MazeController {
                     return;
                 } else if (key == KeyEvent.VK_Q) {
                     soundManager.stopBackgroundMusic();
-                    if (wallMoveTimer != null) wallMoveTimer.stop();
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
                     System.exit(0);
@@ -208,7 +195,6 @@ public class MazeController {
             if (lives <= 0) {
                 JOptionPane.showMessageDialog(null, "Game Over ! Plus de vies.", "Défaite", JOptionPane.ERROR_MESSAGE);
                 soundManager.stopBackgroundMusic();
-                if (wallMoveTimer != null) wallMoveTimer.stop();
                 if (wallChangeTimer != null) wallChangeTimer.stop();
                 if (trapTimer != null) trapTimer.stop();
                 System.exit(0);
@@ -223,7 +209,6 @@ public class MazeController {
     }
 
     public void nextLevel() {
-        System.out.println("Passage au niveau suivant : " + (level + 1));
         level++;
         MazeModel newModel = new MazeModel(level);
         setModel(newModel);

@@ -7,10 +7,9 @@ public class MazeModel {
     private int[][] maze;
     private int playerX, playerY;
     private int exitX, exitY;
-    private int movingWallX, movingWallY;
     private int trapX, trapY;
     private boolean trapOpen = false;
-    private Set<String> modifiedBlocks = new HashSet<>(); // Suivi des blocs modifiés
+    private Set<String> modifiedBlocks = new HashSet<>();
 
     public MazeModel(int level) {
         int size = getSizeForLevel(level) / 2;
@@ -31,7 +30,6 @@ public class MazeModel {
         playerX = 0;
         playerY = 1;
 
-        initMovingWall();
         initTrap();
     }
 
@@ -76,23 +74,6 @@ public class MazeModel {
             case 7: return 22;
             default: return 10;
         }
-    }
-
-    private void initMovingWall() {
-        int attempts = 0;
-        while (attempts < 100) {
-            int x = RANDOM.nextInt(maze[0].length - 4) + 2;
-            int y = RANDOM.nextInt(maze.length - 4) + 2;
-            if (maze[y][x] == 1 && !(x == playerX && y == playerY) && !(x == exitX && y == exitY)) {
-                movingWallX = x;
-                movingWallY = y;
-                modifiedBlocks.add(x + "," + y);
-                return;
-            }
-            attempts++;
-        }
-        movingWallX = -1;
-        movingWallY = -1;
     }
 
     private void initTrap() {
@@ -147,7 +128,7 @@ public class MazeModel {
         return false;
     }
 
-    // Trouve un chemin actuel entre joueur et sortie
+    // Trouve le chemin actuel entre joueur et sortie
     private List<int[]> findCurrentPath() {
         List<int[]> path = new ArrayList<>();
         boolean[][] visited = new boolean[maze.length][maze[0].length];
@@ -164,7 +145,6 @@ public class MazeModel {
             int y = current[1];
 
             if (x == exitX && y == exitY) {
-                // Reconstruire le chemin
                 int[] pos = new int[]{x, y};
                 while (pos != null) {
                     path.add(0, pos);
@@ -191,7 +171,8 @@ public class MazeModel {
         return path;
     }
 
-    public void breakRandomWall() {
+    // Nouvel événement combiné : bloque le chemin actuel et ouvre un nouveau
+    public void modifyPath() {
         int attempts = 0;
         int[][] backup = new int[maze.length][maze[0].length];
         for (int i = 0; i < maze.length; i++) {
@@ -200,92 +181,43 @@ public class MazeModel {
         List<int[]> currentPath = findCurrentPath();
 
         while (attempts < 100) {
-            int x = RANDOM.nextInt(maze[0].length - 2) + 1;
-            int y = RANDOM.nextInt(maze.length - 2) + 1;
-            String posKey = x + "," + y;
-            if (maze[y][x] == 1 && !modifiedBlocks.contains(posKey) && 
-                !(x == playerX && y == playerY) && !(x == exitX && y == exitY)) {
-                maze[y][x] = 0;
-                if (hasPathToExit(playerX, playerY, exitX, exitY)) {
-                    modifiedBlocks.add(posKey);
-                    return;
+            // Étape 1 : Bloquer le chemin actuel avec un mur
+            int createIndex = RANDOM.nextInt(currentPath.size() - 1); // Éviter la sortie
+            int createX = currentPath.get(createIndex)[0];
+            int createY = currentPath.get(createIndex)[1];
+            String createKey = createX + "," + createY;
+
+            if (maze[createY][createX] == 0 && !modifiedBlocks.contains(createKey) &&
+                !(createX == playerX && createY == playerY) && !(createX == exitX && createY == exitY)) {
+                maze[createY][createX] = 1;
+
+                // Étape 2 : Casser un mur ailleurs pour ouvrir un nouveau chemin
+                int breakAttempts = 0;
+                while (breakAttempts < 50) {
+                    int breakX = RANDOM.nextInt(maze[0].length - 2) + 1;
+                    int breakY = RANDOM.nextInt(maze.length - 2) + 1;
+                    String breakKey = breakX + "," + breakY;
+
+                    if (maze[breakY][breakX] == 1 && !modifiedBlocks.contains(breakKey) &&
+                        !(breakX == playerX && breakY == playerY) && !(breakX == exitX && breakY == exitY) &&
+                        !breakKey.equals(createKey)) {
+                        maze[breakY][breakX] = 0;
+                        if (hasPathToExit(playerX, playerY, exitX, exitY)) {
+                            modifiedBlocks.add(createKey);
+                            modifiedBlocks.add(breakKey);
+                            return;
+                        }
+                        maze[breakY][breakX] = 1; // Annuler la casse si invalide
+                    }
+                    breakAttempts++;
                 }
+                // Restaurer si aucune casse valide n’est trouvée
                 for (int i = 0; i < maze.length; i++) {
                     System.arraycopy(backup[i], 0, maze[i], 0, maze[i].length);
                 }
             }
             attempts++;
         }
-    }
-
-    public void createRandomWall() {
-        int attempts = 0;
-        int[][] backup = new int[maze.length][maze[0].length];
-        for (int i = 0; i < maze.length; i++) {
-            System.arraycopy(maze[i], 0, backup[i], 0, maze[i].length);
-        }
-        List<int[]> currentPath = findCurrentPath();
-
-        while (attempts < 100) {
-            // Prioriser un bloc près du chemin actuel
-            int pathIndex = RANDOM.nextInt(currentPath.size() - 1); // Éviter la sortie
-            int x = currentPath.get(pathIndex)[0] + RANDOM.nextInt(3) - 1; // Autour du chemin
-            int y = currentPath.get(pathIndex)[1] + RANDOM.nextInt(3) - 1;
-            String posKey = x + "," + y;
-            if (x > 0 && x < maze[0].length - 1 && y > 0 && y < maze.length - 1 &&
-                maze[y][x] == 0 && !modifiedBlocks.contains(posKey) && 
-                !(x == playerX && y == playerY) && !(x == exitX && y == exitY)) {
-                maze[y][x] = 1;
-                if (hasPathToExit(playerX, playerY, exitX, exitY)) {
-                    modifiedBlocks.add(posKey);
-                    return;
-                }
-                for (int i = 0; i < maze.length; i++) {
-                    System.arraycopy(backup[i], 0, maze[i], 0, maze[i].length);
-                }
-            }
-            attempts++;
-        }
-    }
-
-    public void moveWall() {
-        if (movingWallX == -1 || movingWallY == -1) return;
-
-        int[][] backup = new int[maze.length][maze[0].length];
-        for (int i = 0; i < maze.length; i++) {
-            System.arraycopy(maze[i], 0, backup[i], 0, maze[i].length);
-        }
-        List<int[]> currentPath = findCurrentPath();
-
-        maze[movingWallY][movingWallX] = 0;
-        int[] directions = {0, 1, 2, 3};
-        shuffleArray(directions);
-        for (int dir : directions) {
-            int newX = movingWallX, newY = movingWallY;
-            switch (dir) {
-                case 0: newY--; break;
-                case 1: newY++; break;
-                case 2: newX++; break;
-                case 3: newX--; break;
-            }
-            String newPosKey = newX + "," + newY;
-            if (newX > 1 && newX < maze[0].length - 2 && newY > 1 && newY < maze.length - 2 &&
-                maze[newY][newX] == 0 && !modifiedBlocks.contains(newPosKey) && 
-                !(newX == playerX && newY == playerY) && !(newX == exitX && newY == exitY)) {
-                maze[newY][newX] = 1;
-                if (hasPathToExit(playerX, playerY, exitX, exitY)) {
-                    modifiedBlocks.remove(movingWallX + "," + movingWallY);
-                    modifiedBlocks.add(newPosKey);
-                    movingWallX = newX;
-                    movingWallY = newY;
-                    return;
-                }
-                for (int i = 0; i < maze.length; i++) {
-                    System.arraycopy(backup[i], 0, maze[i], 0, maze[i].length);
-                }
-            }
-        }
-        maze[movingWallY][movingWallX] = 1;
     }
 
     public void toggleTrap() {

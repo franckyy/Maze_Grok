@@ -58,8 +58,8 @@ public class MazeView extends JPanel {
         });
         quitButton.addActionListener(e -> {
             soundManager.stopBackgroundMusic();
-            if (controller != null && controller.wallMoveTimer != null) controller.wallMoveTimer.stop();
-            if (controller != null && controller.wallChangeTimer != null) controller.wallChangeTimer.stop();
+            if (controller != null && controller.wallChangeTimer != null) controller.wallChangeTimer.stop(); // Correction : wallMoveTimer -> wallChangeTimer
+            if (controller != null && controller.trapTimer != null) controller.trapTimer.stop();
             System.exit(0);
         });
     }
@@ -97,7 +97,6 @@ public class MazeView extends JPanel {
         gameWon = false;
         nextLevelButton.setVisible(false);
         quitButton.setVisible(false);
-        System.out.println("Vue réinitialisée pour le niveau " + controller.getLevel());
     }
 
     public void setGameWon(boolean won) {
@@ -169,7 +168,6 @@ public class MazeView extends JPanel {
             nextLevelButton.setVisible(true);
             quitButton.setVisible(true);
         }
-        System.out.println("Rendu de MazeView - gameWon: " + gameWon);
     }
 
     private void drawBrickWall(Graphics2D g2d, int x, int y, int size) {
