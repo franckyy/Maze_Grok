@@ -28,7 +28,8 @@ public class MazeController {
     private String playerName;
     private int lives;
     private LevelManager levelManager;
-    private boolean gameOver = false; // Variable bien déclarée ici
+    private boolean gameOver = false;
+    private int wallChangeOccurrences = 0; // Nouveau compteur
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
@@ -49,13 +50,21 @@ public class MazeController {
         LevelConfig config = levelManager.getLevelConfig(level);
         List<String> obstacles = config.getObstacles();
         List<Integer> frequencies = config.getObstacleFrequencies();
+        List<Integer> counts = config.getObstacleCounts();
 
         if (obstacles.contains("wallChange")) {
             int index = obstacles.indexOf("wallChange");
             int frequency = frequencies.get(index) * 1000; // Convertir en millisecondes
+            int maxOccurrences = counts.get(index); // Nombre total d’événements
             wallChangeTimer = new Timer(frequency, e -> {
-                model.modifyPath();
-                view.repaint();
+                if (wallChangeOccurrences < maxOccurrences) {
+                    model.modifyPath(); // 1 événement par cycle
+                    wallChangeOccurrences++;
+                    view.repaint();
+                }
+                if (wallChangeOccurrences >= maxOccurrences) {
+                    wallChangeTimer.stop(); // Arrêter après maxOccurrences
+                }
             });
             wallChangeTimer.setInitialDelay(frequency / 2);
             wallChangeTimer.start();
@@ -87,13 +96,14 @@ public class MazeController {
         view.requestFocusInWindow();
         setupLevelTimers();
         gameOver = false;
+        wallChangeOccurrences = 0; // Réinitialiser le compteur
     }
 
     private void setupKeyBindings() {
         view.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (gameOver) return; // Utilisation de la variable d’instance
+                if (gameOver) return;
                 int key = e.getKeyCode();
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
@@ -119,7 +129,7 @@ public class MazeController {
 
             @Override
             public void keyReleased(KeyEvent e) {
-                if (gameOver) return; // Utilisation de la variable d’instance
+                if (gameOver) return;
                 int key = e.getKeyCode();
                 if (key == KeyEvent.VK_UP) directions[0] = false;
                 else if (key == KeyEvent.VK_DOWN) directions[1] = false;
