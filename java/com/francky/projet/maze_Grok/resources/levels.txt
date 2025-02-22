@@ -1,9 +1,9 @@
 [level1]
 mazeWidth=10
 mazeHeight=10
-obstacles=wallChange
-obstacleCount=5
-obstacleFrequency=1
+obstacles=wallChange,trap
+obstacleCount=1,1
+obstacleFrequency=2,6
 lives=3
 
 [level2]

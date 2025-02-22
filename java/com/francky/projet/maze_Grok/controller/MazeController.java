@@ -2,7 +2,9 @@ package com.francky.projet.maze_Grok.controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -29,7 +31,7 @@ public class MazeController {
     private int lives;
     private LevelManager levelManager;
     private boolean gameOver = false;
-    private int wallChangeOccurrences = 0; // Nouveau compteur
+    private Map<String, Integer> obstacleOccurrences = new HashMap<>(); // Compteur par type d’obstacle
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
@@ -52,30 +54,46 @@ public class MazeController {
         List<Integer> frequencies = config.getObstacleFrequencies();
         List<Integer> counts = config.getObstacleCounts();
 
+        obstacleOccurrences.clear(); // Réinitialiser les compteurs
+        for (String obstacle : obstacles) {
+            obstacleOccurrences.put(obstacle, 0);
+        }
+
         if (obstacles.contains("wallChange")) {
             int index = obstacles.indexOf("wallChange");
             int frequency = frequencies.get(index) * 1000; // Convertir en millisecondes
             int maxOccurrences = counts.get(index); // Nombre total d’événements
             wallChangeTimer = new Timer(frequency, e -> {
-                if (wallChangeOccurrences < maxOccurrences) {
+                int occurrences = obstacleOccurrences.get("wallChange");
+                if (occurrences < maxOccurrences) {
                     model.modifyPath(); // 1 événement par cycle
-                    wallChangeOccurrences++;
+                    obstacleOccurrences.put("wallChange", occurrences + 1);
                     view.repaint();
                 }
-                if (wallChangeOccurrences >= maxOccurrences) {
+                if (obstacleOccurrences.get("wallChange") >= maxOccurrences) {
                     wallChangeTimer.stop(); // Arrêter après maxOccurrences
                 }
             });
             wallChangeTimer.setInitialDelay(frequency / 2);
             wallChangeTimer.start();
         }
+
         if (obstacles.contains("trap")) {
             int index = obstacles.indexOf("trap");
             int frequency = frequencies.get(index) * 1000;
+            int maxOccurrences = counts.get(index);
             trapTimer = new Timer(frequency, e -> {
-                model.toggleTrap();
-                view.repaint();
+                int occurrences = obstacleOccurrences.get("trap");
+                if (occurrences < maxOccurrences) {
+                    model.toggleTrap(); // 1 événement par cycle
+                    obstacleOccurrences.put("trap", occurrences + 1);
+                    view.repaint();
+                }
+                if (obstacleOccurrences.get("trap") >= maxOccurrences) {
+                    trapTimer.stop(); // Arrêter après maxOccurrences
+                }
             });
+            trapTimer.setInitialDelay(frequency / 2);
             trapTimer.start();
         }
     }
@@ -96,7 +114,7 @@ public class MazeController {
         view.requestFocusInWindow();
         setupLevelTimers();
         gameOver = false;
-        wallChangeOccurrences = 0; // Réinitialiser le compteur
+        obstacleOccurrences.clear(); // Réinitialiser pour le nouveau niveau
     }
 
     private void setupKeyBindings() {
