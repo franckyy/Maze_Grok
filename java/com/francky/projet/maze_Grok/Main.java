@@ -7,6 +7,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import com.francky.projet.maze_Grok.controller.MazeController;
 import com.francky.projet.maze_Grok.model.MazeModel;
+import com.francky.projet.maze_Grok.model.LevelManager;
+import com.francky.projet.maze_Grok.model.LevelConfig;
 import com.francky.projet.maze_Grok.view.MazeView;
 
 public class Main {
@@ -22,6 +24,8 @@ public class Main {
         }
 
         int level = loadPlayerLevel(playerName);
+        LevelManager levelManager = new LevelManager();
+        LevelConfig config = levelManager.getLevelConfig(level);
         MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
         MazeController controller = new MazeController(model, view, level, playerName);

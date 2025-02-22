@@ -2,12 +2,15 @@ package com.francky.projet.maze_Grok.controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
 import com.francky.projet.maze_Grok.Main;
+import com.francky.projet.maze_Grok.model.LevelConfig;
+import com.francky.projet.maze_Grok.model.LevelManager;
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.utils.SoundManager;
 import com.francky.projet.maze_Grok.view.MazeView;
@@ -17,15 +20,15 @@ public class MazeController {
     private MazeView view;
     private Timer moveTimer;
     public Timer wallChangeTimer;
-    public Timer trapTimer; // Changé de private à public
+    public Timer trapTimer;
     private boolean[] directions;
     private static final int[] DIRECTION_KEYS = {KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT};
     private SoundManager soundManager;
     private int level;
     private String playerName;
-    private int lives = 3;
-    private static final int TRAP_CYCLE = 8000;
-    private boolean gameOver = false;
+    private int lives;
+    private LevelManager levelManager;
+    private boolean gameOver = false; // Variable bien déclarée ici
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
@@ -34,22 +37,33 @@ public class MazeController {
         this.playerName = playerName;
         this.directions = new boolean[4];
         this.soundManager = new SoundManager();
+        this.levelManager = new LevelManager();
+        LevelConfig config = levelManager.getLevelConfig(level);
+        this.lives = config.getLives();
         setupKeyBindings();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         setupLevelTimers();
     }
 
     private void setupLevelTimers() {
-        if (level >= 4) {
-            wallChangeTimer = new Timer(10000, e -> {
+        LevelConfig config = levelManager.getLevelConfig(level);
+        List<String> obstacles = config.getObstacles();
+        List<Integer> frequencies = config.getObstacleFrequencies();
+
+        if (obstacles.contains("wallChange")) {
+            int index = obstacles.indexOf("wallChange");
+            int frequency = frequencies.get(index) * 1000; // Convertir en millisecondes
+            wallChangeTimer = new Timer(frequency, e -> {
                 model.modifyPath();
                 view.repaint();
             });
-            wallChangeTimer.setInitialDelay(5000);
+            wallChangeTimer.setInitialDelay(frequency / 2);
             wallChangeTimer.start();
         }
-        if (level >= 6) {
-            trapTimer = new Timer(TRAP_CYCLE, e -> {
+        if (obstacles.contains("trap")) {
+            int index = obstacles.indexOf("trap");
+            int frequency = frequencies.get(index) * 1000;
+            trapTimer = new Timer(frequency, e -> {
                 model.toggleTrap();
                 view.repaint();
             });
@@ -79,7 +93,7 @@ public class MazeController {
         view.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (gameOver) return;
+                if (gameOver) return; // Utilisation de la variable d’instance
                 int key = e.getKeyCode();
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
@@ -105,7 +119,7 @@ public class MazeController {
 
             @Override
             public void keyReleased(KeyEvent e) {
-                if (gameOver) return;
+                if (gameOver) return; // Utilisation de la variable d’instance
                 int key = e.getKeyCode();
                 if (key == KeyEvent.VK_UP) directions[0] = false;
                 else if (key == KeyEvent.VK_DOWN) directions[1] = false;
@@ -210,6 +224,8 @@ public class MazeController {
 
     public void nextLevel() {
         level++;
+        LevelConfig config = levelManager.getLevelConfig(level);
+        this.lives = config.getLives();
         MazeModel newModel = new MazeModel(level);
         setModel(newModel);
         soundManager.playBackgroundMusic("king_tubby_01.wav");
