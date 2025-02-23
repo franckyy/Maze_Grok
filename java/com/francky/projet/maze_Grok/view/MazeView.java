@@ -25,10 +25,12 @@ public class MazeView extends JPanel {
     private int animationFrame = 0;
     private boolean trapAnimation = false;
     private int trapAnimationStep = 0;
+    private RobotRenderer robotRenderer; // Nouvelle instance pour dessiner le robot
 
     public MazeView(MazeModel model) {
         this.model = model;
         this.soundManager = new SoundManager();
+        this.robotRenderer = new RobotRenderer(); // Initialisation
         setPreferredSize(new Dimension(600, 600));
         initButtons();
     }
@@ -120,7 +122,7 @@ public class MazeView extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
 
         CELL_SIZE = Math.min(getWidth() / model.getMazeWidth(), getHeight() / model.getMazeHeight());
-        int PLAYER_SIZE = CELL_SIZE - PLAYER_SIZE_RATIO;
+        int PLAYER_SIZE = Math.max(CELL_SIZE - PLAYER_SIZE_RATIO, 20); // Taille minimale de 20 pixels
 
         g2d.setColor(Color.WHITE);
         g2d.fillRect(0, 0, getWidth(), getHeight());
@@ -145,11 +147,11 @@ public class MazeView extends JPanel {
         int exitY = model.getExitY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
         g2d.fillOval(exitX, exitY, PLAYER_SIZE, PLAYER_SIZE);
 
-        // Dessin du robot joueur style Nono
+        // Dessin du robot via RobotRenderer
         int playerX = model.getPlayerX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetX;
         int playerY = model.getPlayerY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetY;
         int playerSize = trapAnimation ? PLAYER_SIZE * trapAnimationStep / 10 : PLAYER_SIZE;
-        drawNonoRobot(g2d, playerX, playerY, playerSize, animationFrame);
+        robotRenderer.draw(g2d, playerX, playerY, playerSize, animationFrame);
 
         if (gameWon) {
             g2d.setFont(new Font("Arial", Font.BOLD, 30));
@@ -170,50 +172,6 @@ public class MazeView extends JPanel {
             nextLevelButton.setVisible(true);
             quitButton.setVisible(true);
         }
-    }
-
-    private void drawNonoRobot(Graphics2D g2d, int x, int y, int size, int frame) {
-        // Corps ovale rouge, plus petit en largeur et moins long en hauteur
-        g2d.setColor(Color.RED);
-        int bodyWidth = size * 2 / 3; // Largeur réduite
-        int bodyHeight = size * 75 / 100; // Hauteur réduite (moins long)
-        g2d.fillOval(x + size / 6, y + size / 3, bodyWidth, bodyHeight);
-
-        // Tête un peu plus grande (2/3 de la taille du corps en largeur)
-        g2d.setColor(Color.RED);
-        int headSize = size * 2 / 3;
-        g2d.fillOval(x + size / 6, y, headSize, headSize);
-
-        // Yeux blancs avec pupilles noires
-        g2d.setColor(Color.WHITE);
-        int eyeSize = headSize / 3;
-        g2d.fillOval(x + size / 4 - eyeSize / 2, y + headSize / 4 - eyeSize / 2, eyeSize, eyeSize);
-        g2d.fillOval(x + size / 2 - eyeSize / 2, y + headSize / 4 - eyeSize / 2, eyeSize, eyeSize);
-        g2d.setColor(Color.BLACK);
-        int pupilSize = eyeSize / 2;
-        g2d.fillOval(x + size / 4 - pupilSize / 2, y + headSize / 4 - pupilSize / 2, pupilSize, pupilSize);
-        g2d.fillOval(x + size / 2 - pupilSize / 2, y + headSize / 4 - pupilSize / 2, pupilSize, pupilSize);
-
-        // Bouche souriante
-        g2d.setColor(Color.BLACK);
-        g2d.drawArc(x + size / 4, y + headSize / 2, size / 3, size / 6, 0, -180); // Sourire vers le haut
-
-        // Antennes courtes
-        g2d.setColor(Color.BLACK);
-        g2d.drawLine(x + size / 3, y, x + size / 3, y - size / 4); // Antenne gauche
-        g2d.drawLine(x + size / 2, y, x + size / 2, y - size / 4); // Antenne droite
-        g2d.fillOval(x + size / 3 - size / 16, y - size / 4 - size / 16, size / 8, size / 8); // Bout de l’antenne gauche
-        g2d.fillOval(x + size / 2 - size / 16, y - size / 4 - size / 16, size / 8, size / 8); // Bout de l’antenne droite
-
-        // Bras (animation : oscillation)
-        g2d.setColor(Color.RED);
-        int armOffset = (frame == 0) ? size / 8 : -size / 8; // Frame 0 : bras bas, Frame 1 : bras haut
-        g2d.fillOval(x - size / 8, y + size / 2 + armOffset, size / 4, size / 4); // Bras gauche
-        g2d.fillOval(x + size - size / 8, y + size / 2 + armOffset, size / 4, size / 4); // Bras droit
-
-        // Jambes courtes (ajustées au corps plus court)
-        g2d.fillRect(x + size / 4, y + size, size / 8, size / 4); // Jambe gauche
-        g2d.fillRect(x + size / 2, y + size, size / 8, size / 4); // Jambe droite
     }
 
     private void drawBrickWall(Graphics2D g2d, int x, int y, int size) {
