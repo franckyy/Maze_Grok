@@ -31,7 +31,7 @@ public class LevelManager {
                     String[] parts = line.split("=");
                     if (parts.length < 2) {
                         System.out.println("Ligne ignorée (format invalide) : " + line);
-                        continue; // Ignorer les lignes sans '='
+                        continue;
                     }
                     String key = parts[0].trim();
                     String value = parts[1].trim();
@@ -48,16 +48,28 @@ public class LevelManager {
                             currentLevel.setObstacles(value); 
                             System.out.println("  " + key + " = " + value);
                             break;
-                        case "obstacleCount": 
-                            currentLevel.setObstacleCounts(value); 
+                        case "wallCount": 
+                            currentLevel.setWallCount(Integer.parseInt(value)); 
                             System.out.println("  " + key + " = " + value);
                             break;
-                        case "obstacleFrequency": 
-                            currentLevel.setObstacleFrequencies(value); 
+                        case "trapCount": 
+                            currentLevel.setTrapCount(Integer.parseInt(value)); 
+                            System.out.println("  " + key + " = " + value);
+                            break;
+                        case "wallFrequency": 
+                            currentLevel.setWallFrequency(Integer.parseInt(value)); 
                             System.out.println("  " + key + " = " + value);
                             break;
                         case "lives": 
                             currentLevel.setLives(Integer.parseInt(value)); 
+                            System.out.println("  " + key + " = " + value);
+                            break;
+                        case "trapOpenTime": 
+                            currentLevel.setTrapOpenTime(Integer.parseInt(value)); 
+                            System.out.println("  " + key + " = " + value);
+                            break;
+                        case "trapClosedTime": 
+                            currentLevel.setTrapClosedTime(Integer.parseInt(value)); 
                             System.out.println("  " + key + " = " + value);
                             break;
                     }

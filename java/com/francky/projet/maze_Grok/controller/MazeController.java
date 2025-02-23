@@ -51,8 +51,11 @@ public class MazeController {
     private void setupLevelTimers() {
         LevelConfig config = levelManager.getLevelConfig(level);
         List<String> obstacles = config.getObstacles();
-        List<Integer> frequencies = config.getObstacleFrequencies();
-        List<Integer> counts = config.getObstacleCounts();
+        int wallCount = config.getWallCount();
+        int trapCount = config.getTrapCount();
+        int wallFrequency = config.getWallFrequency() * 1000;  // Convertir en millisecondes
+        int trapOpenTime = config.getTrapOpenTime() * 1000;  // Convertir en millisecondes
+        int trapClosedTime = config.getTrapClosedTime() * 1000;  // Convertir en millisecondes
 
         obstacleOccurrences.clear();
         System.out.println("Obstacles chargés pour le niveau " + level + " : " + obstacles);
@@ -61,43 +64,46 @@ public class MazeController {
         }
 
         if (obstacles.contains("wallChange")) {
-            int index = obstacles.indexOf("wallChange");
-            int frequency = frequencies.get(index) * 1000;
-            int maxOccurrences = counts.get(index);
-            wallChangeTimer = new Timer(frequency, e -> {
+            wallChangeTimer = new Timer(wallFrequency, e -> {
                 Integer occurrences = obstacleOccurrences.get("wallChange");
                 int count = (occurrences != null) ? occurrences : 0;
-                if (count < maxOccurrences) {
+                if (count < wallCount) {
                     model.modifyPath();
                     obstacleOccurrences.put("wallChange", count + 1);
                     view.repaint();
                 }
-                if (obstacleOccurrences.get("wallChange") >= maxOccurrences) {
+                if (obstacleOccurrences.get("wallChange") >= wallCount) {
                     wallChangeTimer.stop();
                 }
             });
-            wallChangeTimer.setInitialDelay(frequency / 2);
+            wallChangeTimer.setInitialDelay(wallFrequency / 2);
             wallChangeTimer.start();
         }
 
         if (obstacles.contains("trap")) {
-            int index = obstacles.indexOf("trap");
-            int frequency = frequencies.get(index) * 1000;
-            int maxCycles = counts.get(index); // Nombre de cycles complets (ouvert-fermé)
-            trapTimer = new Timer(frequency / 2, e -> { // Divisé par 2 car 2 états par cycle
+            trapTimer = new Timer(0, null);  // Timer initialisé sans délai fixe
+            trapTimer.stop();  // Arrêter immédiatement pour le configurer dynamiquement
+            trapTimer = new Timer(trapClosedTime, e -> {
                 Integer occurrences = obstacleOccurrences.get("trap");
-                int cycleCount = (occurrences != null) ? occurrences / 2 : 0; // Compter les cycles (2 toggles = 1 cycle)
-                if (cycleCount < maxCycles) {
-                    model.toggleTrap(); // Ouvre ou ferme
-                    int newOccurrences = (occurrences != null) ? occurrences + 1 : 1;
-                    obstacleOccurrences.put("trap", newOccurrences);
-                    view.repaint();
-                    if (newOccurrences >= maxCycles * 2) { // Arrêter après maxCycles * 2 toggles
-                        trapTimer.stop();
+                int cycleCount = (occurrences != null) ? occurrences / 2 : 0;
+                if (cycleCount < trapCount) {
+                    if (!model.isTrapOpen()) {
+                        model.toggleTrap();  // Ouvre la trappe
+                        view.repaint();
+                        obstacleOccurrences.put("trap", (occurrences != null) ? occurrences + 1 : 1);
+                        trapTimer.setDelay(trapOpenTime);  // Temps ouvert
+                    } else {
+                        model.toggleTrap();  // Ferme la trappe
+                        view.repaint();
+                        obstacleOccurrences.put("trap", (occurrences != null) ? occurrences + 1 : 2);
+                        trapTimer.setDelay(trapClosedTime);  // Temps fermé
+                    }
+                    if (obstacleOccurrences.get("trap") >= trapCount * 2) {
+                        trapTimer.stop();  // Arrêter après tous les cycles
                     }
                 }
             });
-            trapTimer.setInitialDelay(frequency / 2);
+            trapTimer.setInitialDelay(trapClosedTime);  // Début avec la trappe fermée
             trapTimer.start();
         }
     }
