@@ -31,7 +31,7 @@ public class MazeController {
     private int lives;
     private LevelManager levelManager;
     private boolean gameOver = false;
-    private Map<String, Integer> obstacleOccurrences = new HashMap<>(); // Compteur par type d’obstacle
+    private Map<String, Integer> obstacleOccurrences = new HashMap<>();
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
@@ -55,8 +55,9 @@ public class MazeController {
         List<Integer> counts = config.getObstacleCounts();
 
         obstacleOccurrences.clear();
-        for (String obstacle : obstacles) {
-            obstacleOccurrences.put(obstacle, 0);
+        System.out.println("Obstacles chargés pour le niveau " + level + " : " + obstacles); // Log temporaire
+        for (int i = 0; i < obstacles.size(); i++) {
+            obstacleOccurrences.put(obstacles.get(i), 0);
         }
 
         if (obstacles.contains("wallChange")) {
@@ -64,10 +65,11 @@ public class MazeController {
             int frequency = frequencies.get(index) * 1000;
             int maxOccurrences = counts.get(index);
             wallChangeTimer = new Timer(frequency, e -> {
-                int occurrences = obstacleOccurrences.get("wallChange");
-                if (occurrences < maxOccurrences) {
+                Integer occurrences = obstacleOccurrences.get("wallChange");
+                int count = (occurrences != null) ? occurrences : 0; // Gérer le cas null
+                if (count < maxOccurrences) {
                     model.modifyPath();
-                    obstacleOccurrences.put("wallChange", occurrences + 1);
+                    obstacleOccurrences.put("wallChange", count + 1);
                     view.repaint();
                 }
                 if (obstacleOccurrences.get("wallChange") >= maxOccurrences) {
@@ -83,10 +85,11 @@ public class MazeController {
             int frequency = frequencies.get(index) * 1000;
             int maxOccurrences = counts.get(index);
             trapTimer = new Timer(frequency, e -> {
-                int occurrences = obstacleOccurrences.get("trap");
-                if (occurrences < maxOccurrences) {
+                Integer occurrences = obstacleOccurrences.get("trap");
+                int count = (occurrences != null) ? occurrences : 0; // Gérer le cas null
+                if (count < maxOccurrences) {
                     model.toggleTrap();
-                    obstacleOccurrences.put("trap", occurrences + 1);
+                    obstacleOccurrences.put("trap", count + 1);
                     view.repaint();
                 }
                 if (obstacleOccurrences.get("trap") >= maxOccurrences) {
@@ -107,7 +110,7 @@ public class MazeController {
         stopMovement();
         if (wallChangeTimer != null) wallChangeTimer.stop();
         if (trapTimer != null) trapTimer.stop();
-        view.setPlayerOffset(0, 0, 0); // Réinitialiser avec frame à 0
+        view.setPlayerOffset(0, 0, 0);
         view.setModel(newModel);
         view.resetView();
         view.repaint();
@@ -156,7 +159,7 @@ public class MazeController {
 
                 if (!isAnyDirectionPressed() && moveTimer != null && moveTimer.isRunning()) {
                     moveTimer.stop();
-                    view.setPlayerOffset(0, 0, 0); // Réinitialiser avec frame à 0
+                    view.setPlayerOffset(0, 0, 0);
                     view.repaint();
                 }
             }
@@ -174,7 +177,7 @@ public class MazeController {
         if (moveTimer != null && moveTimer.isRunning()) {
             moveTimer.stop();
         }
-        view.setPlayerOffset(0, 0, 0); // Réinitialiser avec frame à 0
+        view.setPlayerOffset(0, 0, 0);
         for (int i = 0; i < directions.length; i++) {
             directions[i] = false;
         }
@@ -206,7 +209,7 @@ public class MazeController {
             float dx = (targetX - currentX) * cellSize / (float) steps;
             float dy = (targetY - currentY) * cellSize / (float) steps;
 
-            int animationFrame = step[0] % 2; // Alterner entre 0 et 1 pour l’animation
+            int animationFrame = step[0] % 2;
             view.setPlayerOffset(dx * step[0], dy * step[0], animationFrame);
             view.repaint();
 
@@ -214,7 +217,7 @@ public class MazeController {
                 step[0] = 0;
                 model.setPlayerX(targetX);
                 model.setPlayerY(targetY);
-                view.setPlayerOffset(0, 0, 0); // Réinitialiser avec frame à 0
+                view.setPlayerOffset(0, 0, 0);
                 soundManager.playSoundEffect("blip.wav");
                 checkTrapCollision();
                 if (model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
