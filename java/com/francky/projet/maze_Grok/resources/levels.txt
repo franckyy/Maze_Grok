@@ -9,9 +9,9 @@ lives=3
 [level2]
 mazeWidth=12
 mazeHeight=12
-obstacles=
-obstacleCount=0
-obstacleFrequency=0
+obstacles=trap
+obstacleCount=1
+obstacleFrequency=3
 lives=3
 
 [level3]

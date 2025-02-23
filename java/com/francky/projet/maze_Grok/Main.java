@@ -24,9 +24,7 @@ public class Main {
         }
 
         int level = loadPlayerLevel(playerName);
-        LevelManager levelManager = new LevelManager();
-        LevelConfig config = levelManager.getLevelConfig(level);
-        MazeModel model = new MazeModel(level);
+        MazeModel model = new MazeModel(level); // Utilise LevelConfig via MazeModel
         MazeView view = new MazeView(model);
         MazeController controller = new MazeController(model, view, level, playerName);
         view.setController(controller);

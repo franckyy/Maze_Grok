@@ -55,7 +55,7 @@ public class MazeController {
         List<Integer> counts = config.getObstacleCounts();
 
         obstacleOccurrences.clear();
-        System.out.println("Obstacles chargés pour le niveau " + level + " : " + obstacles); // Log temporaire
+        System.out.println("Obstacles chargés pour le niveau " + level + " : " + obstacles);
         for (int i = 0; i < obstacles.size(); i++) {
             obstacleOccurrences.put(obstacles.get(i), 0);
         }
@@ -66,7 +66,7 @@ public class MazeController {
             int maxOccurrences = counts.get(index);
             wallChangeTimer = new Timer(frequency, e -> {
                 Integer occurrences = obstacleOccurrences.get("wallChange");
-                int count = (occurrences != null) ? occurrences : 0; // Gérer le cas null
+                int count = (occurrences != null) ? occurrences : 0;
                 if (count < maxOccurrences) {
                     model.modifyPath();
                     obstacleOccurrences.put("wallChange", count + 1);
@@ -83,17 +83,18 @@ public class MazeController {
         if (obstacles.contains("trap")) {
             int index = obstacles.indexOf("trap");
             int frequency = frequencies.get(index) * 1000;
-            int maxOccurrences = counts.get(index);
-            trapTimer = new Timer(frequency, e -> {
+            int maxCycles = counts.get(index); // Nombre de cycles complets (ouvert-fermé)
+            trapTimer = new Timer(frequency / 2, e -> { // Divisé par 2 car 2 états par cycle
                 Integer occurrences = obstacleOccurrences.get("trap");
-                int count = (occurrences != null) ? occurrences : 0; // Gérer le cas null
-                if (count < maxOccurrences) {
-                    model.toggleTrap();
-                    obstacleOccurrences.put("trap", count + 1);
+                int cycleCount = (occurrences != null) ? occurrences / 2 : 0; // Compter les cycles (2 toggles = 1 cycle)
+                if (cycleCount < maxCycles) {
+                    model.toggleTrap(); // Ouvre ou ferme
+                    int newOccurrences = (occurrences != null) ? occurrences + 1 : 1;
+                    obstacleOccurrences.put("trap", newOccurrences);
                     view.repaint();
-                }
-                if (obstacleOccurrences.get("trap") >= maxOccurrences) {
-                    trapTimer.stop();
+                    if (newOccurrences >= maxCycles * 2) { // Arrêter après maxCycles * 2 toggles
+                        trapTimer.stop();
+                    }
                 }
             });
             trapTimer.setInitialDelay(frequency / 2);

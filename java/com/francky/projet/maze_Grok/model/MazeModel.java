@@ -9,11 +9,14 @@ public class MazeModel {
     private int exitX, exitY;
     private int trapX, trapY;
     private boolean trapOpen = false;
-    private Set<String> modifiedBlocks = new HashSet<>();
+    private Set<String> modifiedBlocks = new HashSet<>(); // Correction : HashSet au lieu de HashMap
 
     public MazeModel(int level) {
-        int size = getSizeForLevel(level) / 2;
-        maze = new int[2 * size + 1][2 * size + 1];
+        LevelManager levelManager = new LevelManager();
+        LevelConfig config = levelManager.getLevelConfig(level);
+        int width = config.getMazeWidth() / 2;  // Divisé par 2 car l’algorithme double la taille
+        int height = config.getMazeHeight() / 2;
+        maze = new int[2 * height + 1][2 * width + 1];
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
                 maze[i][j] = 1;
@@ -22,10 +25,10 @@ public class MazeModel {
         carvePath(1, 1);
         maze[1][0] = 0;
         maze[1][1] = 0;
-        int exitYIndex = 2 * size - 1;
-        maze[exitYIndex][2 * size] = 0;
-        maze[exitYIndex][2 * size - 1] = 0;
-        exitX = 2 * size;
+        int exitYIndex = 2 * height - 1;
+        maze[exitYIndex][2 * width] = 0;
+        maze[exitYIndex][2 * width - 1] = 0;
+        exitX = 2 * width;
         exitY = exitYIndex;
         playerX = 0;
         playerY = 1;
@@ -63,19 +66,6 @@ public class MazeModel {
         }
     }
 
-    public static int getSizeForLevel(int level) {
-        switch (level) {
-            case 1: return 10;
-            case 2: return 12;
-            case 3: return 14;
-            case 4: return 16;
-            case 5: return 18;
-            case 6: return 20;
-            case 7: return 22;
-            default: return 10;
-        }
-    }
-
     private void initTrap() {
         int attempts = 0;
         while (attempts < 100) {
@@ -93,7 +83,6 @@ public class MazeModel {
         trapY = -1;
     }
 
-    // Vérifie s’il existe un chemin entre (startX, startY) et (goalX, goalY)
     private boolean hasPathToExit(int startX, int startY, int goalX, int goalY) {
         boolean[][] visited = new boolean[maze.length][maze[0].length];
         Stack<int[]> stack = new Stack<>();
@@ -128,7 +117,6 @@ public class MazeModel {
         return false;
     }
 
-    // Trouve le chemin actuel entre joueur et sortie
     private List<int[]> findCurrentPath() {
         List<int[]> path = new ArrayList<>();
         boolean[][] visited = new boolean[maze.length][maze[0].length];
@@ -171,7 +159,6 @@ public class MazeModel {
         return path;
     }
 
-    // Nouvel événement combiné : bloque le chemin actuel et ouvre un nouveau
     public void modifyPath() {
         int attempts = 0;
         int[][] backup = new int[maze.length][maze[0].length];
@@ -181,8 +168,7 @@ public class MazeModel {
         List<int[]> currentPath = findCurrentPath();
 
         while (attempts < 100) {
-            // Étape 1 : Bloquer le chemin actuel avec un mur
-            int createIndex = RANDOM.nextInt(currentPath.size() - 1); // Éviter la sortie
+            int createIndex = RANDOM.nextInt(currentPath.size() - 1);
             int createX = currentPath.get(createIndex)[0];
             int createY = currentPath.get(createIndex)[1];
             String createKey = createX + "," + createY;
@@ -191,7 +177,6 @@ public class MazeModel {
                 !(createX == playerX && createY == playerY) && !(createX == exitX && createY == exitY)) {
                 maze[createY][createX] = 1;
 
-                // Étape 2 : Casser un mur ailleurs pour ouvrir un nouveau chemin
                 int breakAttempts = 0;
                 while (breakAttempts < 50) {
                     int breakX = RANDOM.nextInt(maze[0].length - 2) + 1;
@@ -207,11 +192,10 @@ public class MazeModel {
                             modifiedBlocks.add(breakKey);
                             return;
                         }
-                        maze[breakY][breakX] = 1; // Annuler la casse si invalide
+                        maze[breakY][breakX] = 1;
                     }
                     breakAttempts++;
                 }
-                // Restaurer si aucune casse valide n’est trouvée
                 for (int i = 0; i < maze.length; i++) {
                     System.arraycopy(backup[i], 0, maze[i], 0, maze[i].length);
                 }
