@@ -2,20 +2,16 @@ package com.francky.projet.maze_Grok.controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.Timer;
-
 import com.francky.projet.maze_Grok.Main;
+import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.model.LevelConfig;
 import com.francky.projet.maze_Grok.model.LevelManager;
-import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.utils.SoundManager;
 import com.francky.projet.maze_Grok.view.MazeView;
+import javax.swing.JFrame;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MazeController {
     private MazeModel model;
@@ -53,12 +49,11 @@ public class MazeController {
         List<String> obstacles = config.getObstacles();
         int wallCount = config.getWallCount();
         int trapCount = config.getTrapCount();
-        int wallFrequency = config.getWallFrequency() * 1000;  // Convertir en millisecondes
-        int trapOpenTime = config.getTrapOpenTime() * 1000;  // Convertir en millisecondes
-        int trapClosedTime = config.getTrapClosedTime() * 1000;  // Convertir en millisecondes
+        int wallFrequency = config.getWallFrequency() * 1000;
+        int trapOpenTime = config.getTrapOpenTime() * 1000;
+        int trapClosedTime = config.getTrapClosedTime() * 1000;
 
         obstacleOccurrences.clear();
-        System.out.println("Obstacles chargés pour le niveau " + level + " : " + obstacles);
         for (int i = 0; i < obstacles.size(); i++) {
             obstacleOccurrences.put(obstacles.get(i), 0);
         }
@@ -81,29 +76,29 @@ public class MazeController {
         }
 
         if (obstacles.contains("trap")) {
-            trapTimer = new Timer(0, null);  // Timer initialisé sans délai fixe
-            trapTimer.stop();  // Arrêter immédiatement pour le configurer dynamiquement
+            trapTimer = new Timer(0, null);
+            trapTimer.stop();
             trapTimer = new Timer(trapClosedTime, e -> {
                 Integer occurrences = obstacleOccurrences.get("trap");
                 int cycleCount = (occurrences != null) ? occurrences / 2 : 0;
                 if (cycleCount < trapCount) {
                     if (!model.isTrapOpen()) {
-                        model.toggleTrap();  // Ouvre la trappe
+                        model.toggleTrap();
                         view.repaint();
                         obstacleOccurrences.put("trap", (occurrences != null) ? occurrences + 1 : 1);
-                        trapTimer.setDelay(trapOpenTime);  // Temps ouvert
+                        trapTimer.setDelay(trapOpenTime);
                     } else {
-                        model.toggleTrap();  // Ferme la trappe
+                        model.toggleTrap();
                         view.repaint();
                         obstacleOccurrences.put("trap", (occurrences != null) ? occurrences + 1 : 2);
-                        trapTimer.setDelay(trapClosedTime);  // Temps fermé
+                        trapTimer.setDelay(trapClosedTime);
                     }
                     if (obstacleOccurrences.get("trap") >= trapCount * 2) {
-                        trapTimer.stop();  // Arrêter après tous les cycles
+                        trapTimer.stop();
                     }
                 }
             });
-            trapTimer.setInitialDelay(trapClosedTime);  // Début avec la trappe fermée
+            trapTimer.setInitialDelay(trapClosedTime);
             trapTimer.start();
         }
     }
@@ -147,6 +142,7 @@ public class MazeController {
                     soundManager.stopBackgroundMusic();
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
+                    Main.savePlayerLevel(playerName, level);
                     System.exit(0);
                 }
 
@@ -250,6 +246,7 @@ public class MazeController {
                 soundManager.stopBackgroundMusic();
                 if (wallChangeTimer != null) wallChangeTimer.stop();
                 if (trapTimer != null) trapTimer.stop();
+                Main.savePlayerLevel(playerName, level);
                 System.exit(0);
             } else {
                 view.startTrapAnimation(() -> {

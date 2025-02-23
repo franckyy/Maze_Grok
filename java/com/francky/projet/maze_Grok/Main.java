@@ -1,9 +1,14 @@
 package com.francky.projet.maze_Grok;
 
 import java.awt.Dimension;
-import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -12,10 +17,13 @@ import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.view.MazeView;
 
 public class Main {
-    private static final String PLAYERS_FILE_RESOURCE = "/com/francky/projet/maze_Grok/resources/players_level.txt"; // Lecture depuis resources
-    private static final String PLAYERS_FILE_LOCAL = "players_level.txt"; // Écriture dans le répertoire courant
+    private static final String PLAYERS_FILE_RESOURCE = "/com/francky/projet/maze_Grok/resources/players_level.txt";
+    private static final String DB_URL = "jdbc:h2:mem:maze;DB_CLOSE_DELAY=-1"; // Base en mémoire
+    private static final String DB_USER = "sa";
+    private static final String DB_PASSWORD = "";
 
     public static void main(String[] args) {
+        initializeDatabase();
         SwingUtilities.invokeLater(() -> createAndShowGUI());
     }
 
@@ -27,7 +35,6 @@ public class Main {
         }
 
         int level = loadPlayerLevel(playerName);
-        System.out.println("Niveau chargé pour " + playerName + " : " + level);
         MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
         MazeController controller = new MazeController(model, view, level, playerName);
@@ -44,97 +51,64 @@ public class Main {
         view.requestFocusInWindow();
     }
 
-    private static int loadPlayerLevel(String playerName) {
-        // Essayer de lire d'abord depuis le fichier local
-        File localFile = new File(PLAYERS_FILE_LOCAL);
-        System.out.println("Tentative de lecture de " + localFile.getAbsolutePath());
-        if (localFile.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(localFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("Ligne lue (local) : " + line);
-                    String[] parts = line.split("=");
-                    if (parts.length == 2 && parts[0].trim().equals(playerName)) {
-                        return Integer.parseInt(parts[1].trim());
+    private static void initializeDatabase() {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE TABLE IF NOT EXISTS PLAYERS (NAME VARCHAR(255) PRIMARY KEY, LEVEL INT)");
+
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(Main.class.getResourceAsStream(PLAYERS_FILE_RESOURCE)))) {
+                if (reader != null) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split("=");
+                        if (parts.length == 2) {
+                            String name = parts[0].trim();
+                            int level = Integer.parseInt(parts[1].trim());
+                            String sql = "INSERT INTO PLAYERS (NAME, LEVEL) VALUES (?, ?) ON DUPLICATE KEY UPDATE LEVEL = ?";
+                            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                                pstmt.setString(1, name);
+                                pstmt.setInt(2, level);
+                                pstmt.setInt(3, level);
+                                pstmt.executeUpdate();
+                            }
+                        }
                     }
                 }
-                System.out.println("Joueur " + playerName + " non trouvé dans le fichier local.");
-            } catch (IOException | NumberFormatException e) {
-                System.out.println("Erreur lors de la lecture de " + PLAYERS_FILE_LOCAL + " : " + e.getMessage());
+            } catch (IOException e) {
+                System.out.println("Erreur lors de la lecture initiale de " + PLAYERS_FILE_RESOURCE + " : " + e.getMessage());
             }
-        } else {
-            System.out.println("Fichier local " + PLAYERS_FILE_LOCAL + " non trouvé, tentative depuis resources.");
+        } catch (SQLException e) {
+            System.out.println("Erreur lors de l'initialisation de la base H2 : " + e.getMessage());
+            e.printStackTrace();
         }
+    }
 
-        // Si pas trouvé localement, essayer depuis resources
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(Main.class.getResourceAsStream(PLAYERS_FILE_RESOURCE)))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("Ligne lue (resources) : " + line);
-                String[] parts = line.split("=");
-                if (parts.length == 2 && parts[0].trim().equals(playerName)) {
-                    return Integer.parseInt(parts[1].trim());
+    private static int loadPlayerLevel(String playerName) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement("SELECT LEVEL FROM PLAYERS WHERE NAME = ?")) {
+            pstmt.setString(1, playerName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("LEVEL");
                 }
             }
-            System.out.println("Joueur " + playerName + " non trouvé dans les resources.");
-        } catch (IOException | NumberFormatException e) {
-            System.out.println("Erreur lors de la lecture de " + PLAYERS_FILE_RESOURCE + " depuis resources ou fichier absent : " + e.getMessage());
+        } catch (SQLException e) {
+            System.out.println("Erreur lors de la lecture du niveau pour " + playerName + " : " + e.getMessage());
         }
-
         return 1; // Niveau par défaut si joueur non trouvé ou erreur
     }
 
     public static void savePlayerLevel(String playerName, int level) {
-        File file = new File(PLAYERS_FILE_LOCAL);
-        System.out.println("Tentative d'écriture dans " + file.getAbsolutePath());
-        Map<String, Integer> players = new HashMap<>();
-
-        // Charger les données existantes depuis le fichier local
-        if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("Ligne existante lue (local) : " + line);
-                    String[] parts = line.split("=");
-                    if (parts.length == 2) {
-                        players.put(parts[0].trim(), Integer.parseInt(parts[1].trim()));
-                    }
-                }
-            } catch (IOException e) {
-                System.out.println("Erreur lors de la lecture existante de " + PLAYERS_FILE_LOCAL + " : " + e.getMessage());
-            }
-        } else {
-            // Si le fichier local n'existe pas, essayer de charger depuis resources
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(Main.class.getResourceAsStream(PLAYERS_FILE_RESOURCE)))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("Ligne existante lue (resources) : " + line);
-                    String[] parts = line.split("=");
-                    if (parts.length == 2) {
-                        players.put(parts[0].trim(), Integer.parseInt(parts[1].trim()));
-                    }
-                }
-            } catch (IOException | NullPointerException e) {
-                System.out.println("Aucune donnée initiale dans " + PLAYERS_FILE_RESOURCE + " ou fichier absent : " + e.getMessage());
-            }
-            System.out.println("Fichier " + PLAYERS_FILE_LOCAL + " n'existe pas encore, création en cours.");
-        }
-
-        // Mettre à jour ou ajouter le joueur actuel
-        players.put(playerName, level);
-        System.out.println("Sauvegarde de " + playerName + " au niveau " + level);
-
-        // Réécrire toutes les données dans le fichier local
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            for (Map.Entry<String, Integer> entry : players.entrySet()) {
-                writer.write(entry.getKey() + "=" + entry.getValue());
-                writer.newLine();
-            }
-            System.out.println("Fichier " + PLAYERS_FILE_LOCAL + " mis à jour avec succès.");
-        } catch (IOException e) {
-            System.out.println("Erreur lors de l'écriture dans " + PLAYERS_FILE_LOCAL + " : " + e.getMessage());
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "INSERT INTO PLAYERS (NAME, LEVEL) VALUES (?, ?) ON DUPLICATE KEY UPDATE LEVEL = ?")) {
+            pstmt.setString(1, playerName);
+            pstmt.setInt(2, level);
+            pstmt.setInt(3, level);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Erreur lors de la sauvegarde du niveau pour " + playerName + " : " + e.getMessage());
             e.printStackTrace();
         }
     }
