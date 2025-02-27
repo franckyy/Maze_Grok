@@ -55,53 +55,70 @@ public class MazeController {
         int trapOpenTime = config.getTrapOpenTime() * 1000;
         int trapClosedTime = config.getTrapClosedTime() * 1000;
 
+        System.out.println("Setup timers pour niveau " + level + " : obstacles=" + obstacles + ", wallCount=" + wallCount + ", wallFrequency=" + wallFrequency/1000 + "s");
+
         obstacleOccurrences.clear();
         for (int i = 0; i < obstacles.size(); i++) {
             obstacleOccurrences.put(obstacles.get(i), 0);
         }
 
         if (obstacles.contains("wallChange")) {
+            System.out.println("Configuration de wallChangeTimer pour niveau " + level + " avec fréquence " + wallFrequency/1000 + "s");
             wallChangeTimer = new Timer(wallFrequency, e -> {
                 Integer occurrences = obstacleOccurrences.get("wallChange");
                 int count = (occurrences != null) ? occurrences : 0;
+                System.out.println("wallChange déclenché : occurrence " + count + "/" + wallCount);
                 if (count < wallCount) {
                     model.modifyPath();
                     obstacleOccurrences.put("wallChange", count + 1);
                     view.repaint();
+                    System.out.println("Murs modifiés au niveau " + level);
                 }
                 if (obstacleOccurrences.get("wallChange") >= wallCount) {
                     wallChangeTimer.stop();
+                    System.out.println("wallChangeTimer arrêté après " + wallCount + " occurrences");
                 }
             });
             wallChangeTimer.setInitialDelay(wallFrequency / 2);
             wallChangeTimer.start();
+            System.out.println("wallChangeTimer démarré avec délai initial " + (wallFrequency / 2)/1000 + "s");
+        } else {
+            System.out.println("Aucun wallChange configuré pour niveau " + level);
         }
 
         if (obstacles.contains("trap")) {
+            System.out.println("Configuration de trapTimer pour niveau " + level);
             trapTimer = new Timer(0, null);
             trapTimer.stop();
             trapTimer = new Timer(trapClosedTime, e -> {
                 Integer occurrences = obstacleOccurrences.get("trap");
                 int cycleCount = (occurrences != null) ? occurrences / 2 : 0;
+                System.out.println("trapTimer déclenché : cycle " + cycleCount + "/" + trapCount);
                 if (cycleCount < trapCount) {
                     if (!model.isTrapOpen()) {
                         model.toggleTrap();
                         view.repaint();
                         obstacleOccurrences.put("trap", (occurrences != null) ? occurrences + 1 : 1);
                         trapTimer.setDelay(trapOpenTime);
+                        System.out.println("Piège ouvert au niveau " + level);
                     } else {
                         model.toggleTrap();
                         view.repaint();
                         obstacleOccurrences.put("trap", (occurrences != null) ? occurrences + 1 : 2);
                         trapTimer.setDelay(trapClosedTime);
+                        System.out.println("Piège fermé au niveau " + level);
                     }
                     if (obstacleOccurrences.get("trap") >= trapCount * 2) {
                         trapTimer.stop();
+                        System.out.println("trapTimer arrêté après " + trapCount + " cycles");
                     }
                 }
             });
             trapTimer.setInitialDelay(trapClosedTime);
             trapTimer.start();
+            System.out.println("trapTimer démarré avec délai initial " + trapClosedTime/1000 + "s");
+        } else {
+            System.out.println("Aucun piège configuré pour niveau " + level);
         }
     }
 
@@ -138,7 +155,7 @@ public class MazeController {
                 else if (key == KeyEvent.VK_LEFT) directions[2] = true;
                 else if (key == KeyEvent.VK_RIGHT) directions[3] = true;
                 else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
-                    nextLevel();
+                    MazeController.this.nextLevel();
                     return;
                 } else if (key == KeyEvent.VK_Q) {
                     soundManager.stopBackgroundMusic();
