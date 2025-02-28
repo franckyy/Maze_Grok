@@ -4,11 +4,13 @@ com/francky/projet/maze_Grok/HighScores$HighScoreEntry.class
 com/francky/projet/maze_Grok/controller/MazeController$1.class
 com/francky/projet/maze_Grok/PlayerTimes.class
 com/francky/projet/maze_Grok/model/MazeModel.class
+com/francky/projet/maze_Grok/Main$3.class
 com/francky/projet/maze_Grok/utils/SoundManager.class
 com/francky/projet/maze_Grok/controller/MazeController.class
 com/francky/projet/maze_Grok/model/LevelConfig.class
 com/francky/projet/maze_Grok/Main$1.class
 com/francky/projet/maze_Grok/view/InfoPanel.class
 com/francky/projet/maze_Grok/Main.class
+com/francky/projet/maze_Grok/Main$2.class
 com/francky/projet/maze_Grok/model/LevelManager.class
 com/francky/projet/maze_Grok/view/LadybugRenderer.class
