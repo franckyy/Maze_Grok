@@ -5,7 +5,10 @@ import java.awt.GridBagLayout;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -14,6 +17,8 @@ import com.francky.projet.maze_Grok.controller.MazeController;
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.view.InfoPanel;
 import com.francky.projet.maze_Grok.view.MazeView;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class Main {
     private static final String PLAYERS_FILE = "/home/oem/git/Maze_Grok/players_level.txt";
@@ -26,6 +31,12 @@ public class Main {
     }
 
     private static void createAndShowGUI() {
+        // Création du dialogue personnalisé
+        JDialog dialog = new JDialog((JFrame) null, "Bienvenue", true);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setLayout(new BorderLayout());
+
+        // Champ texte pour le nom
         JTextField nameField = new JTextField(10);
         nameField.setDocument(new javax.swing.text.PlainDocument() {
             @Override
@@ -36,22 +47,61 @@ public class Main {
                 super.insertString(offs, str, a);
             }
         });
-        Object[] message = {"Entrez votre prénom (max 10 caractères) :", nameField};
-        int option = JOptionPane.showConfirmDialog(null, message, "Bienvenue", JOptionPane.OK_CANCEL_OPTION);
-        String playerName = (option == JOptionPane.OK_OPTION) ? nameField.getText().trim() : null;
 
-        if (playerName == null || playerName.isEmpty()) {
+        // Panneau pour le message et le champ
+        JPanel inputPanel = new JPanel();
+        inputPanel.add(new JLabel("Entrez votre prénom (max 10 caractères) :"));
+        inputPanel.add(nameField);
+        dialog.add(inputPanel, BorderLayout.CENTER);
+
+        // Panneau pour les boutons
+        JPanel buttonPanel = new JPanel();
+        JButton okButton = new JButton("OK");
+        JButton cancelButton = new JButton("Annuler");
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Variable pour stocker le choix du joueur
+        final String[] playerName = {null};
+
+        // Action pour OK
+        okButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                playerName[0] = nameField.getText().trim();
+                dialog.dispose();
+            }
+        });
+
+        // Action pour Annuler
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                playerName[0] = null;
+                dialog.dispose();
+            }
+        });
+
+        // Afficher le dialogue et donner le focus
+        dialog.pack();
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+        SwingUtilities.invokeLater(() -> nameField.requestFocusInWindow()); // Focus après affichage
+
+        // Vérification du nom
+        if (playerName[0] == null || playerName[0].isEmpty()) {
             JOptionPane.showMessageDialog(null, "Au revoir !", "Fermeture", JOptionPane.INFORMATION_MESSAGE);
             System.exit(0);
         }
 
-        int level = loadPlayerLevel(playerName);
-        PlayerTimes playerTimes = loadPlayerTimes(playerName);
+        int level = loadPlayerLevel(playerName[0]);
+        PlayerTimes playerTimes = loadPlayerTimes(playerName[0]);
         HighScores highScores = loadHighScores();
         MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
         InfoPanel infoPanel = new InfoPanel(level, playerTimes, highScores);
-        MazeController controller = new MazeController(model, view, level, playerName, infoPanel);
+        MazeController controller = new MazeController(model, view, level, playerName[0], infoPanel);
         view.setController(controller);
 
         JFrame frame = new JFrame("Amazing Maze - Niveau " + level);

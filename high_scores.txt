@@ -1,7 +1,7 @@
-level1=5,Francky
+level1=2,Jeje
 level2=3,gr
 level3=4,lulu
-level4=10,ngu
+level4=6,Jeje
 level5=10,ngu
-level6=26,ngu
+level6=13,Juin
 level7=13,Francky
