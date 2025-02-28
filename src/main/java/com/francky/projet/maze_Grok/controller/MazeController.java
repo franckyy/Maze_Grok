@@ -31,7 +31,7 @@ public class MazeController {
     private SoundManager soundManager;
     private int level;
     private String playerName;
-    private int lives;
+    private int lives; // Vies globales pour tout le jeu
     private LevelManager levelManager;
     private boolean gameOver = false;
     private Map<String, Integer> obstacleOccurrences = new HashMap<>();
@@ -41,20 +41,19 @@ public class MazeController {
     private PlayerTimes playerTimes;
     private HighScores highScores;
 
-    public MazeController(MazeModel model, MazeView view, int level, String playerName, InfoPanel infoPanel) {
+    public MazeController(MazeModel model, MazeView view, int level, String playerName, InfoPanel infoPanel, int lives) {
         this.model = model;
         this.view = view;
         this.infoPanel = infoPanel;
         this.level = level;
         this.playerName = playerName;
+        this.lives = lives; // Initialisation des vies globales
         this.directions = new boolean[4];
         this.soundManager = new SoundManager();
         this.levelManager = new LevelManager();
         this.playerTimes = Main.loadPlayerTimes(playerName);
         this.highScores = Main.loadHighScores();
         this.totalTime = playerTimes.lastTotalTime;
-        LevelConfig config = levelManager.getLevelConfig(level);
-        this.lives = config.getLives();
         setupKeyBindings();
         setupLevelTimer();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
@@ -69,7 +68,7 @@ public class MazeController {
         levelTime = 0;
         levelTimer = new Timer(1000, e -> {
             levelTime++;
-            infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")));
+            infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")), lives);
         });
         levelTimer.start();
     }
@@ -176,14 +175,13 @@ public class MazeController {
                 int key = e.getKeyCode();
 
                 if (key == KeyEvent.VK_E) {
-                    // Réinitialisation des fichiers sélectionnés avec des cases à cocher
                     List<String> filesToReset = Main.showResetFileCheckboxDialog();
                     if (!filesToReset.isEmpty()) {
                         Main.resetFile(filesToReset);
                         soundManager.stopBackgroundMusic();
                         if (wallChangeTimer != null) wallChangeTimer.stop();
                         if (trapTimer != null) trapTimer.stop();
-                        System.exit(0); // Quitte sans sauvegarde
+                        System.exit(0);
                     }
                     return;
                 }
@@ -196,7 +194,7 @@ public class MazeController {
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
                     Main.savePlayerLevel(playerName, level);
-                    Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, lives);
                     Main.saveHighScores(highScores);
                     System.exit(0);
                     return;
@@ -227,7 +225,7 @@ public class MazeController {
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
                     Main.savePlayerLevel(playerName, level);
-                    Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, lives);
                     Main.saveHighScores(highScores);
                     System.exit(0);
                 }
@@ -324,9 +322,9 @@ public class MazeController {
                     if (levelTime < currentHighScore) {
                         highScores.levelHighScores.put(level, new HighScores.HighScoreEntry(levelTime, playerName));
                     }
-                    Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, lives);
                     Main.saveHighScores(highScores);
-                    infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")));
+                    infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")), lives);
                 }
                 if (!isAnyDirectionPressed() && !gameOver) {
                     moveTimer.stop();
@@ -338,14 +336,14 @@ public class MazeController {
 
     private void checkTrapCollision() {
         if (level >= 6 && model.getPlayerX() == model.getTrapX() && model.getPlayerY() == model.getTrapY() && model.isTrapOpen()) {
-            lives--;
+            lives--; // Décompte global des vies
             if (lives <= 0) {
                 JOptionPane.showMessageDialog(null, "Game Over ! Plus de vies.", "Défaite", JOptionPane.ERROR_MESSAGE);
                 soundManager.stopBackgroundMusic();
                 if (wallChangeTimer != null) wallChangeTimer.stop();
                 if (trapTimer != null) trapTimer.stop();
                 Main.savePlayerLevel(playerName, level);
-                Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                Main.savePlayerTimes(playerName, level, levelTime, totalTime, lives);
                 Main.saveHighScores(highScores);
                 System.exit(0);
             } else {
@@ -361,14 +359,14 @@ public class MazeController {
     public void nextLevel() {
         level++;
         LevelConfig config = levelManager.getLevelConfig(level);
-        this.lives = config.getLives();
+        // Ne plus réinitialiser les vies ici, elles sont globales
         MazeModel newModel = new MazeModel(level);
         setModel(newModel);
         infoPanel.setLevel(level);
         setupLevelTimer();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         Main.savePlayerLevel(playerName, level);
-        Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+        Main.savePlayerTimes(playerName, level, levelTime, totalTime, lives);
         Main.saveHighScores(highScores);
         ((JFrame) view.getTopLevelAncestor()).setTitle("Amazing Maze - Niveau " + level);
     }

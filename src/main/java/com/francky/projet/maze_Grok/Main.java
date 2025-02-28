@@ -33,6 +33,7 @@ public class Main {
     private static final String TIMES_FILE = "/home/oem/git/Maze_Grok/player_times.txt";
     private static final String HIGH_SCORES_FILE = "/home/oem/git/Maze_Grok/high_scores.txt";
     private static final int MAX_NAME_LENGTH = 10;
+    private static final int INITIAL_LIVES = 3;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> createAndShowGUI());
@@ -99,11 +100,12 @@ public class Main {
 
         int level = loadPlayerLevel(playerName[0]);
         PlayerTimes playerTimes = loadPlayerTimes(playerName[0]);
+        int lives = playerTimes.lives > 0 ? playerTimes.lives : INITIAL_LIVES; // Charge les vies ou initialise à 3
         HighScores highScores = loadHighScores();
         MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
         InfoPanel infoPanel = new InfoPanel(level, playerTimes, highScores);
-        MazeController controller = new MazeController(model, view, level, playerName[0], infoPanel);
+        MazeController controller = new MazeController(model, view, level, playerName[0], infoPanel, lives);
         view.setController(controller);
 
         JFrame frame = new JFrame("Amazing Maze - Niveau " + level);
@@ -157,11 +159,12 @@ public class Main {
                     if (parts.length == 2) {
                         String name = parts[0].trim();
                         String[] times = parts[1].split(",");
-                        if (times.length >= 3) {
+                        if (times.length >= 4) { // Inclut les vies
                             int lastLevel = Integer.parseInt(times[0].trim());
                             int lastLevelTime = Integer.parseInt(times[1].trim());
                             int lastTotalTime = Integer.parseInt(times[2].trim());
-                            players.put(name, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, new HashMap<>(), 0));
+                            int lives = Integer.parseInt(times[3].trim());
+                            players.put(name, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, new HashMap<>(), 0, lives));
                         }
                     }
                 }
@@ -170,7 +173,7 @@ public class Main {
             }
         }
 
-        return players.getOrDefault(playerName, new PlayerTimes(0, 0, 0, new HashMap<>(), 0));
+        return players.getOrDefault(playerName, new PlayerTimes(0, 0, 0, new HashMap<>(), 0, INITIAL_LIVES));
     }
 
     public static HighScores loadHighScores() {
@@ -200,7 +203,7 @@ public class Main {
         return highScores;
     }
 
-    public static void savePlayerTimes(String playerName, int lastLevel, int lastLevelTime, int lastTotalTime) {
+    public static void savePlayerTimes(String playerName, int lastLevel, int lastLevelTime, int lastTotalTime, int lives) {
         File file = new File(TIMES_FILE);
         Map<String, PlayerTimes> players = new HashMap<>();
 
@@ -212,11 +215,12 @@ public class Main {
                     if (parts.length == 2) {
                         String name = parts[0].trim();
                         String[] times = parts[1].split(",");
-                        if (times.length >= 3) {
+                        if (times.length >= 4) {
                             int level = Integer.parseInt(times[0].trim());
                             int levelTime = Integer.parseInt(times[1].trim());
                             int totalTime = Integer.parseInt(times[2].trim());
-                            players.put(name, new PlayerTimes(level, levelTime, totalTime, new HashMap<>(), 0));
+                            int savedLives = Integer.parseInt(times[3].trim());
+                            players.put(name, new PlayerTimes(level, levelTime, totalTime, new HashMap<>(), 0, savedLives));
                         }
                     }
                 }
@@ -225,13 +229,13 @@ public class Main {
             }
         }
 
-        players.put(playerName, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, new HashMap<>(), 0));
+        players.put(playerName, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, new HashMap<>(), 0, lives));
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             for (Map.Entry<String, PlayerTimes> entry : players.entrySet()) {
                 String name = entry.getKey();
                 PlayerTimes times = entry.getValue();
-                writer.write(name + "=" + times.lastLevel + "," + times.lastLevelTime + "," + times.lastTotalTime);
+                writer.write(name + "=" + times.lastLevel + "," + times.lastLevelTime + "," + times.lastTotalTime + "," + times.lives);
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -285,7 +289,6 @@ public class Main {
         }
     }
 
-    // Nouvelle méthode avec cases à cocher pour sélectionner les fichiers à réinitialiser
     public static List<String> showResetFileCheckboxDialog() {
         JDialog dialog = new JDialog((JFrame) null, "Réinitialisation de fichiers", true);
         dialog.setLayout(new BorderLayout());
@@ -322,7 +325,7 @@ public class Main {
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                filesToReset.clear(); // Assure que rien n'est retourné si annulé
+                filesToReset.clear();
                 dialog.dispose();
             }
         });
@@ -334,11 +337,10 @@ public class Main {
         return filesToReset;
     }
 
-    // Mise à jour de resetFile pour gérer une liste de fichiers
     public static void resetFile(List<String> filePaths) {
         for (String filePath : filePaths) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-                writer.write(""); // Écrit un fichier vide
+                writer.write("");
                 System.out.println("Fichier " + filePath + " réinitialisé avec succès.");
             } catch (IOException e) {
                 System.out.println("Erreur lors de la réinitialisation de " + filePath + " : " + e.getMessage());
