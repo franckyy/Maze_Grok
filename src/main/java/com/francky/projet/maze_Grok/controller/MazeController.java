@@ -12,12 +12,14 @@ import com.francky.projet.maze_Grok.model.LevelConfig;
 import com.francky.projet.maze_Grok.model.LevelManager;
 import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.utils.SoundManager;
+import com.francky.projet.maze_Grok.view.InfoPanel;
 import com.francky.projet.maze_Grok.view.MazeView;
 import javax.swing.JFrame;
 
 public class MazeController {
     private MazeModel model;
     private MazeView view;
+    private InfoPanel infoPanel; // Nouveau champ
     private Timer moveTimer;
     public Timer wallChangeTimer;
     public Timer trapTimer;
@@ -32,9 +34,10 @@ public class MazeController {
     private Map<String, Integer> obstacleOccurrences = new HashMap<>();
     private int currentDirection = 3;
 
-    public MazeController(MazeModel model, MazeView view, int level, String playerName) {
+    public MazeController(MazeModel model, MazeView view, int level, String playerName, InfoPanel infoPanel) {
         this.model = model;
         this.view = view;
+        this.infoPanel = infoPanel; // Initialisation
         this.level = level;
         this.playerName = playerName;
         this.directions = new boolean[4];
@@ -171,16 +174,16 @@ public class MazeController {
 
                 if (key == KeyEvent.VK_UP) {
                     directions[0] = true;
-                    currentDirection = 0; // Haut
+                    currentDirection = 0;
                 } else if (key == KeyEvent.VK_DOWN) {
                     directions[1] = true;
-                    currentDirection = 1; // Bas
+                    currentDirection = 1;
                 } else if (key == KeyEvent.VK_LEFT) {
                     directions[2] = true;
-                    currentDirection = 2; // Gauche
+                    currentDirection = 2;
                 } else if (key == KeyEvent.VK_RIGHT) {
                     directions[3] = true;
-                    currentDirection = 3; // Droite
+                    currentDirection = 3;
                 } else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
                     MazeController.this.nextLevel();
                     return;
@@ -310,6 +313,7 @@ public class MazeController {
         this.lives = config.getLives();
         MazeModel newModel = new MazeModel(level);
         setModel(newModel);
+        infoPanel.setLevel(level); // Mise à jour du niveau dans InfoPanel
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         Main.savePlayerLevel(playerName, level);
         ((JFrame) view.getTopLevelAncestor()).setTitle("Amazing Maze - Niveau " + level);

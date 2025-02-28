@@ -1,6 +1,6 @@
 package com.francky.projet.maze_Grok;
 
-import java.awt.Dimension;
+import java.awt.BorderLayout;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +9,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import com.francky.projet.maze_Grok.controller.MazeController;
 import com.francky.projet.maze_Grok.model.MazeModel;
+import com.francky.projet.maze_Grok.view.InfoPanel;
 import com.francky.projet.maze_Grok.view.MazeView;
 
 public class Main {
@@ -28,14 +29,19 @@ public class Main {
         int level = loadPlayerLevel(playerName);
         MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
-        MazeController controller = new MazeController(model, view, level, playerName);
+        InfoPanel infoPanel = new InfoPanel(level);
+        MazeController controller = new MazeController(model, view, level, playerName, infoPanel);
         view.setController(controller);
 
         JFrame frame = new JFrame("Amazing Maze - Niveau " + level);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(view);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        frame.setLayout(new BorderLayout());
+
+        frame.add(infoPanel, BorderLayout.NORTH);
+        frame.add(view, BorderLayout.CENTER);
+
         frame.pack();
-        frame.setMaximumSize(new Dimension(800, 800));
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         view.setFocusable(true);
