@@ -25,12 +25,12 @@ public class MazeView extends JPanel {
     private int animationFrame = 0;
     private boolean trapAnimation = false;
     private int trapAnimationStep = 0;
-    private RobotRenderer robotRenderer; // Nouvelle instance pour dessiner le robot
+    private LadybugRenderer ladybugRenderer; // Changé de RobotRenderer à LadybugRenderer
 
     public MazeView(MazeModel model) {
         this.model = model;
         this.soundManager = new SoundManager();
-        this.robotRenderer = new RobotRenderer(); // Initialisation
+        this.ladybugRenderer = new LadybugRenderer(); // Changé ici
         setPreferredSize(new Dimension(600, 600));
         initButtons();
     }
@@ -122,7 +122,7 @@ public class MazeView extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
 
         CELL_SIZE = Math.min(getWidth() / model.getMazeWidth(), getHeight() / model.getMazeHeight());
-        int PLAYER_SIZE = Math.max(CELL_SIZE - PLAYER_SIZE_RATIO, 20); // Taille minimale de 20 pixels
+        int PLAYER_SIZE = Math.max(CELL_SIZE - PLAYER_SIZE_RATIO, 20);
 
         g2d.setColor(Color.WHITE);
         g2d.fillRect(0, 0, getWidth(), getHeight());
@@ -147,11 +147,11 @@ public class MazeView extends JPanel {
         int exitY = model.getExitY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
         g2d.fillOval(exitX, exitY, PLAYER_SIZE, PLAYER_SIZE);
 
-        // Dessin du robot via RobotRenderer
+        // Dessin de la coccinelle via LadybugRenderer
         int playerX = model.getPlayerX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetX;
         int playerY = model.getPlayerY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetY;
         int playerSize = trapAnimation ? PLAYER_SIZE * trapAnimationStep / 10 : PLAYER_SIZE;
-        robotRenderer.draw(g2d, playerX, playerY, playerSize, animationFrame);
+        ladybugRenderer.draw(g2d, playerX, playerY, playerSize, animationFrame); // Changé ici
 
         if (gameWon) {
             g2d.setFont(new Font("Arial", Font.BOLD, 30));

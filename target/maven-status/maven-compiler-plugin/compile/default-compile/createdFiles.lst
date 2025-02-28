@@ -6,4 +6,4 @@ com/francky/projet/maze_Grok/Main.class
 com/francky/projet/maze_Grok/model/MazeModel.class
 com/francky/projet/maze_Grok/utils/SoundManager.class
 com/francky/projet/maze_Grok/model/LevelManager.class
-com/francky/projet/maze_Grok/view/RobotRenderer.class
+com/francky/projet/maze_Grok/view/LadybugRenderer.class
