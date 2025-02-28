@@ -5,7 +5,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import com.francky.projet.maze_Grok.controller.MazeController;
@@ -18,8 +17,6 @@ public class MazeView extends JPanel {
     private SoundManager soundManager;
     private int CELL_SIZE;
     private final int PLAYER_SIZE_RATIO = 2;
-    private JButton nextLevelButton;
-    private JButton quitButton;
     private boolean gameWon = false;
     private float offsetX = 0, offsetY = 0;
     private int animationFrame = 0;
@@ -32,7 +29,6 @@ public class MazeView extends JPanel {
         this.soundManager = new SoundManager();
         this.ladybugRenderer = new LadybugRenderer();
         setPreferredSize(new Dimension(600, 600));
-        initButtons();
     }
 
     public void setController(MazeController controller) {
@@ -47,25 +43,6 @@ public class MazeView extends JPanel {
         this.offsetX = offsetX;
         this.offsetY = offsetY;
         this.animationFrame = animationFrame;
-    }
-
-    private void initButtons() {
-        nextLevelButton = new JButton("Niveau suivant");
-        quitButton = new JButton("Quitter");
-        nextLevelButton.setVisible(false);
-        quitButton.setVisible(false);
-        add(nextLevelButton);
-        add(quitButton);
-
-        nextLevelButton.addActionListener(e -> {
-            controller.nextLevel();
-        });
-        quitButton.addActionListener(e -> {
-            soundManager.stopBackgroundMusic();
-            if (controller != null && controller.wallChangeTimer != null) controller.wallChangeTimer.stop();
-            if (controller != null && controller.trapTimer != null) controller.trapTimer.stop();
-            System.exit(0);
-        });
     }
 
     public void startTrapAnimation(Runnable onFinished) {
@@ -85,8 +62,6 @@ public class MazeView extends JPanel {
 
     public void resetView() {
         gameWon = false;
-        nextLevelButton.setVisible(false);
-        quitButton.setVisible(false);
     }
 
     public void setGameWon(boolean won) {
@@ -133,31 +108,28 @@ public class MazeView extends JPanel {
         int exitY = model.getExitY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
         g2d.fillOval(exitX, exitY, PLAYER_SIZE, PLAYER_SIZE);
 
-        // Dessin de la coccinelle avec la direction persistante
         int playerX = model.getPlayerX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetX;
         int playerY = model.getPlayerY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetY;
         int playerSize = trapAnimation ? PLAYER_SIZE * trapAnimationStep / 10 : PLAYER_SIZE;
-        int direction = (controller != null) ? controller.getCurrentDirection() : 3; // Droite par défaut
+        int direction = (controller != null) ? controller.getCurrentDirection() : 3;
         ladybugRenderer.draw(g2d, playerX, playerY, playerSize, animationFrame, direction);
 
         if (gameWon) {
-            g2d.setFont(new Font("Arial", Font.BOLD, 30));
-            int rectWidth = 120 + CELL_SIZE;
-            int rectHeight = 40 + CELL_SIZE;
-            int rectX = getWidth() / 2 - rectWidth / 2;
-            int rectY = getHeight() / 2 - rectHeight / 2 - CELL_SIZE;
-            g2d.setColor(Color.GREEN);
-            g2d.fillRect(rectX, rectY, rectWidth, rectHeight);
+            g2d.setFont(new Font("Arial", Font.BOLD, 20));
+            String message = "Clic 'space' to continue ou 'q' to exit game";
+            int textWidth = g2d.getFontMetrics().stringWidth(message);
+            int textHeight = g2d.getFontMetrics().getHeight();
+            int textX = (getWidth() - textWidth) / 2;
+            int textY = getHeight() / 2;
 
-            g2d.setColor(Color.BLUE);
-            int textX = rectX + (rectWidth - 100) / 2 - 5;
-            int textY = rectY + (rectHeight + 10) / 2 + 5;
-            g2d.drawString("Gagné !", textX, textY);
+            // Rectangle de fond clair
+            g2d.setColor(new Color(200, 200, 200)); // Gris clair
+            int padding = 10; // Marge autour du texte
+            g2d.fillRect(textX - padding, textY - textHeight + padding / 2, textWidth + 2 * padding, textHeight + padding);
 
-            nextLevelButton.setBounds(getWidth() / 2 - 100, getHeight() / 2 + 20, 120, 30);
-            quitButton.setBounds(getWidth() / 2 + 40, getHeight() / 2 + 20, 80, 30);
-            nextLevelButton.setVisible(true);
-            quitButton.setVisible(true);
+            // Texte en vert foncé
+            g2d.setColor(new Color(0, 100, 0));
+            g2d.drawString(message, textX, textY);
         }
     }
 

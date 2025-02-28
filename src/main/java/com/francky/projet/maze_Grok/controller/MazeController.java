@@ -30,7 +30,7 @@ public class MazeController {
     private LevelManager levelManager;
     private boolean gameOver = false;
     private Map<String, Integer> obstacleOccurrences = new HashMap<>();
-    private int currentDirection = 3; // 0:haut, 1:bas, 2:gauche, 3:droite (initialisé à droite)
+    private int currentDirection = 3;
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
@@ -150,8 +150,22 @@ public class MazeController {
         view.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (gameOver) return;
                 int key = e.getKeyCode();
+
+                if (gameOver && key == KeyEvent.VK_SPACE) {
+                    nextLevel();
+                    return;
+                } else if (gameOver && key == KeyEvent.VK_Q) {
+                    soundManager.stopBackgroundMusic();
+                    if (wallChangeTimer != null) wallChangeTimer.stop();
+                    if (trapTimer != null) trapTimer.stop();
+                    Main.savePlayerLevel(playerName, level);
+                    System.exit(0);
+                    return;
+                }
+
+                if (gameOver) return;
+
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
 
@@ -236,10 +250,10 @@ public class MazeController {
             int targetX = currentX;
             int targetY = currentY;
 
-            if (directions[0] && model.getMazeCell(currentY - 1, currentX) == 0) targetY--; // Haut
-            else if (directions[1] && model.getMazeCell(currentY + 1, currentX) == 0) targetY++; // Bas
-            else if (directions[2] && model.getMazeCell(currentY, currentX - 1) == 0) targetX--; // Gauche
-            else if (directions[3] && model.getMazeCell(currentY, currentX + 1) == 0) targetX++; // Droite
+            if (directions[0] && model.getMazeCell(currentY - 1, currentX) == 0) targetY--;
+            else if (directions[1] && model.getMazeCell(currentY + 1, currentX) == 0) targetY++;
+            else if (directions[2] && model.getMazeCell(currentY, currentX - 1) == 0) targetX--;
+            else if (directions[3] && model.getMazeCell(currentY, currentX + 1) == 0) targetX++;
 
             float dx = (targetX - currentX) * cellSize / (float) steps;
             float dy = (targetY - currentY) * cellSize / (float) steps;
