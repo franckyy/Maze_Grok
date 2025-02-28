@@ -14,8 +14,8 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import java.awt.event.ActionEvent;
@@ -278,6 +278,37 @@ public class Main {
             }
         } catch (IOException e) {
             System.out.println("Erreur lors de l'écriture dans " + PLAYERS_FILE + " : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Nouvelle méthode pour afficher la boîte de dialogue de réinitialisation
+    public static String showResetFileDialog() {
+        String[] options = {"players_level.txt", "high_scores.txt", "player_times.txt", "Annuler"};
+        int choice = JOptionPane.showOptionDialog(null, 
+            "Quel fichier voulez-vous réinitialiser ?", 
+            "Réinitialisation de fichier", 
+            JOptionPane.DEFAULT_OPTION, 
+            JOptionPane.QUESTION_MESSAGE, 
+            null, 
+            options, 
+            options[3]);
+        
+        switch (choice) {
+            case 0: return PLAYERS_FILE;
+            case 1: return HIGH_SCORES_FILE;
+            case 2: return TIMES_FILE;
+            default: return null; // Annuler
+        }
+    }
+
+    // Nouvelle méthode pour réinitialiser un fichier
+    public static void resetFile(String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write(""); // Écrit un fichier vide
+            System.out.println("Fichier " + filePath + " réinitialisé avec succès.");
+        } catch (IOException e) {
+            System.out.println("Erreur lors de la réinitialisation de " + filePath + " : " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -175,6 +175,19 @@ public class MazeController {
             public void keyPressed(KeyEvent e) {
                 int key = e.getKeyCode();
 
+                if (key == KeyEvent.VK_E) {
+                    // Réinitialisation d'un fichier txt
+                    String fileToReset = Main.showResetFileDialog();
+                    if (fileToReset != null) {
+                        Main.resetFile(fileToReset);
+                        soundManager.stopBackgroundMusic();
+                        if (wallChangeTimer != null) wallChangeTimer.stop();
+                        if (trapTimer != null) trapTimer.stop();
+                        System.exit(0); // Quitte sans sauvegarde
+                    }
+                    return;
+                }
+
                 if (gameOver && key == KeyEvent.VK_SPACE) {
                     nextLevel();
                     return;
