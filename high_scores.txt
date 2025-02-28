@@ -1,0 +1,7 @@
+level1=4
+level2=3
+level3=6
+level4=6
+level6=21
+level7=49
+high_total=4

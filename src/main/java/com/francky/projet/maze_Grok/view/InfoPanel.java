@@ -5,7 +5,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import javax.swing.JPanel;
-import com.francky.projet.maze_Grok.PlayerTimes; // Import ajouté
+import com.francky.projet.maze_Grok.PlayerTimes;
+import com.francky.projet.maze_Grok.HighScores;
 
 public class InfoPanel extends JPanel {
     private int level;
@@ -14,12 +15,12 @@ public class InfoPanel extends JPanel {
     private int highScoreLevel;
     private int highScoreTotal;
 
-    public InfoPanel(int initialLevel, PlayerTimes playerTimes) {
+    public InfoPanel(int initialLevel, PlayerTimes playerTimes, HighScores highScores) {
         this.level = initialLevel;
         this.levelTime = 0;
         this.totalTime = playerTimes.lastTotalTime;
-        this.highScoreLevel = playerTimes.highScores.getOrDefault(initialLevel, 0);
-        this.highScoreTotal = playerTimes.highScoreTotal;
+        this.highScoreLevel = highScores.levelHighScores.getOrDefault(initialLevel, Integer.MAX_VALUE);
+        this.highScoreTotal = highScores.totalHighScore;
         setPreferredSize(new Dimension(0, 100));
         setBackground(Color.LIGHT_GRAY);
     }
@@ -63,7 +64,7 @@ public class InfoPanel extends JPanel {
 
         g.setFont(smallFont);
         String highScoreLevelText = "Meilleur temps niveau : " + (highScoreLevel == Integer.MAX_VALUE ? "N/A" : highScoreLevel + " s");
-        String highScoreTotalText = "Meilleur temps total : " + (highScoreTotal == 0 ? "N/A" : highScoreTotal + " s");
+        String highScoreTotalText = "Meilleur temps total : " + (highScoreTotal == Integer.MAX_VALUE ? "N/A" : highScoreTotal + " s");
         int highScoreLevelWidth = g.getFontMetrics().stringWidth(highScoreLevelText);
         int highScoreTotalWidth = g.getFontMetrics().stringWidth(highScoreTotalText);
         int highScoreLevelX = (getWidth() - highScoreLevelWidth) / 2;

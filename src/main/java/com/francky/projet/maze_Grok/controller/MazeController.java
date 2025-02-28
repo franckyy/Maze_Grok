@@ -14,7 +14,8 @@ import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.utils.SoundManager;
 import com.francky.projet.maze_Grok.view.InfoPanel;
 import com.francky.projet.maze_Grok.view.MazeView;
-import com.francky.projet.maze_Grok.PlayerTimes; // Import ajouté
+import com.francky.projet.maze_Grok.HighScores;
+import com.francky.projet.maze_Grok.PlayerTimes;
 import javax.swing.JFrame;
 
 public class MazeController {
@@ -37,7 +38,8 @@ public class MazeController {
     private int currentDirection = 3;
     private int levelTime = 0;
     private int totalTime = 0;
-    private PlayerTimes playerTimes; // Corrigé en PlayerTimes
+    private PlayerTimes playerTimes;
+    private HighScores highScores;
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName, InfoPanel infoPanel) {
         this.model = model;
@@ -49,6 +51,7 @@ public class MazeController {
         this.soundManager = new SoundManager();
         this.levelManager = new LevelManager();
         this.playerTimes = Main.loadPlayerTimes(playerName);
+        this.highScores = Main.loadHighScores();
         this.totalTime = playerTimes.lastTotalTime;
         LevelConfig config = levelManager.getLevelConfig(level);
         this.lives = config.getLives();
@@ -66,7 +69,7 @@ public class MazeController {
         levelTime = 0;
         levelTimer = new Timer(1000, e -> {
             levelTime++;
-            infoPanel.setTimes(levelTime, totalTime, playerTimes.highScores.getOrDefault(level, Integer.MAX_VALUE), playerTimes.highScoreTotal);
+            infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, Integer.MAX_VALUE), highScores.totalHighScore);
         });
         levelTimer.start();
     }
@@ -180,7 +183,8 @@ public class MazeController {
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
                     Main.savePlayerLevel(playerName, level);
-                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                    Main.saveHighScores(highScores);
                     System.exit(0);
                     return;
                 }
@@ -210,7 +214,8 @@ public class MazeController {
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
                     Main.savePlayerLevel(playerName, level);
-                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                    Main.saveHighScores(highScores);
                     System.exit(0);
                 }
 
@@ -302,11 +307,12 @@ public class MazeController {
                     playerTimes.lastLevel = level;
                     playerTimes.lastLevelTime = levelTime;
                     playerTimes.lastTotalTime = totalTime;
-                    int currentHighScore = playerTimes.highScores.getOrDefault(level, Integer.MAX_VALUE);
-                    playerTimes.highScores.put(level, Math.min(currentHighScore, levelTime));
-                    playerTimes.highScoreTotal = Math.min(playerTimes.highScoreTotal == 0 ? Integer.MAX_VALUE : playerTimes.highScoreTotal, totalTime);
-                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
-                    infoPanel.setTimes(levelTime, totalTime, playerTimes.highScores.getOrDefault(level, Integer.MAX_VALUE), playerTimes.highScoreTotal);
+                    int currentHighScore = highScores.levelHighScores.getOrDefault(level, Integer.MAX_VALUE);
+                    highScores.levelHighScores.put(level, Math.min(currentHighScore, levelTime));
+                    highScores.totalHighScore = Math.min(highScores.totalHighScore == Integer.MAX_VALUE ? Integer.MAX_VALUE : highScores.totalHighScore, totalTime);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                    Main.saveHighScores(highScores);
+                    infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, Integer.MAX_VALUE), highScores.totalHighScore);
                 }
                 if (!isAnyDirectionPressed() && !gameOver) {
                     moveTimer.stop();
@@ -325,7 +331,8 @@ public class MazeController {
                 if (wallChangeTimer != null) wallChangeTimer.stop();
                 if (trapTimer != null) trapTimer.stop();
                 Main.savePlayerLevel(playerName, level);
-                Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
+                Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+                Main.saveHighScores(highScores);
                 System.exit(0);
             } else {
                 view.startTrapAnimation(() -> {
@@ -347,7 +354,8 @@ public class MazeController {
         setupLevelTimer();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         Main.savePlayerLevel(playerName, level);
-        Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
+        Main.savePlayerTimes(playerName, level, levelTime, totalTime);
+        Main.saveHighScores(highScores);
         ((JFrame) view.getTopLevelAncestor()).setTitle("Amazing Maze - Niveau " + level);
     }
 }

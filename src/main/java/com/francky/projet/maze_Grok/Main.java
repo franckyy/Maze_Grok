@@ -17,6 +17,7 @@ import com.francky.projet.maze_Grok.view.MazeView;
 public class Main {
     private static final String PLAYERS_FILE = "/home/oem/git/Maze_Grok/players_level.txt";
     private static final String TIMES_FILE = "/home/oem/git/Maze_Grok/player_times.txt";
+    private static final String HIGH_SCORES_FILE = "/home/oem/git/Maze_Grok/high_scores.txt";
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> createAndShowGUI());
@@ -31,9 +32,10 @@ public class Main {
 
         int level = loadPlayerLevel(playerName);
         PlayerTimes playerTimes = loadPlayerTimes(playerName);
+        HighScores highScores = loadHighScores(); // Charger les high scores globaux
         MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
-        InfoPanel infoPanel = new InfoPanel(level, playerTimes);
+        InfoPanel infoPanel = new InfoPanel(level, playerTimes, highScores);
         MazeController controller = new MazeController(model, view, level, playerName, infoPanel);
         view.setController(controller);
 
@@ -88,20 +90,11 @@ public class Main {
                     if (parts.length == 2) {
                         String name = parts[0].trim();
                         String[] times = parts[1].split(",");
-                        if (times.length >= 5) {
+                        if (times.length >= 3) { // Plus de high scores par joueur
                             int lastLevel = Integer.parseInt(times[0].trim());
                             int lastLevelTime = Integer.parseInt(times[1].trim());
                             int lastTotalTime = Integer.parseInt(times[2].trim());
-                            Map<Integer, Integer> highScores = new HashMap<>();
-                            String[] highScoreParts = times[3].split(":");
-                            for (String part : highScoreParts) {
-                                String[] levelTime = part.split("-");
-                                if (levelTime.length == 2) {
-                                    highScores.put(Integer.parseInt(levelTime[0]), Integer.parseInt(levelTime[1]));
-                                }
-                            }
-                            int highScoreTotal = Integer.parseInt(times[4].trim());
-                            players.put(name, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, highScores, highScoreTotal));
+                            players.put(name, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, new HashMap<>(), 0));
                         }
                     }
                 }
@@ -113,7 +106,34 @@ public class Main {
         return players.getOrDefault(playerName, new PlayerTimes(0, 0, 0, new HashMap<>(), 0));
     }
 
-    public static void savePlayerTimes(String playerName, int lastLevel, int lastLevelTime, int lastTotalTime, Map<Integer, Integer> highScores, int highScoreTotal) {
+    public static HighScores loadHighScores() {
+        File file = new File(HIGH_SCORES_FILE);
+        HighScores highScores = new HighScores();
+
+        if (file.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split("=");
+                    if (parts.length == 2) {
+                        if (parts[0].startsWith("level")) {
+                            int level = Integer.parseInt(parts[0].substring(5));
+                            int time = Integer.parseInt(parts[1].trim());
+                            highScores.levelHighScores.put(level, time);
+                        } else if (parts[0].equals("high_total")) {
+                            highScores.totalHighScore = Integer.parseInt(parts[1].trim());
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("Erreur lors de la lecture de " + HIGH_SCORES_FILE + " : " + e.getMessage());
+            }
+        }
+
+        return highScores;
+    }
+
+    public static void savePlayerTimes(String playerName, int lastLevel, int lastLevelTime, int lastTotalTime) {
         File file = new File(TIMES_FILE);
         Map<String, PlayerTimes> players = new HashMap<>();
 
@@ -125,20 +145,11 @@ public class Main {
                     if (parts.length == 2) {
                         String name = parts[0].trim();
                         String[] times = parts[1].split(",");
-                        if (times.length >= 5) {
+                        if (times.length >= 3) {
                             int level = Integer.parseInt(times[0].trim());
                             int levelTime = Integer.parseInt(times[1].trim());
                             int totalTime = Integer.parseInt(times[2].trim());
-                            Map<Integer, Integer> scores = new HashMap<>();
-                            String[] highScoreParts = times[3].split(":");
-                            for (String part : highScoreParts) {
-                                String[] levelTimePair = part.split("-");
-                                if (levelTimePair.length == 2) {
-                                    scores.put(Integer.parseInt(levelTimePair[0]), Integer.parseInt(levelTimePair[1]));
-                                }
-                            }
-                            int highTotal = Integer.parseInt(times[4].trim());
-                            players.put(name, new PlayerTimes(level, levelTime, totalTime, scores, highTotal));
+                            players.put(name, new PlayerTimes(level, levelTime, totalTime, new HashMap<>(), 0));
                         }
                     }
                 }
@@ -147,22 +158,33 @@ public class Main {
             }
         }
 
-        players.put(playerName, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, highScores, highScoreTotal));
+        players.put(playerName, new PlayerTimes(lastLevel, lastLevelTime, lastTotalTime, new HashMap<>(), 0));
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             for (Map.Entry<String, PlayerTimes> entry : players.entrySet()) {
                 String name = entry.getKey();
                 PlayerTimes times = entry.getValue();
-                StringBuilder highScoresStr = new StringBuilder();
-                for (Map.Entry<Integer, Integer> score : times.highScores.entrySet()) {
-                    if (highScoresStr.length() > 0) highScoresStr.append(":");
-                    highScoresStr.append(score.getKey()).append("-").append(score.getValue());
-                }
-                writer.write(name + "=" + times.lastLevel + "," + times.lastLevelTime + "," + times.lastTotalTime + "," + highScoresStr + "," + times.highScoreTotal);
+                writer.write(name + "=" + times.lastLevel + "," + times.lastLevelTime + "," + times.lastTotalTime);
                 writer.newLine();
             }
         } catch (IOException e) {
             System.out.println("Erreur lors de l'écriture dans " + TIMES_FILE + " : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveHighScores(HighScores highScores) {
+        File file = new File(HIGH_SCORES_FILE);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            for (Map.Entry<Integer, Integer> entry : highScores.levelHighScores.entrySet()) {
+                writer.write("level" + entry.getKey() + "=" + entry.getValue());
+                writer.newLine();
+            }
+            writer.write("high_total=" + highScores.totalHighScore);
+            writer.newLine();
+        } catch (IOException e) {
+            System.out.println("Erreur lors de l'écriture dans " + HIGH_SCORES_FILE + " : " + e.getMessage());
             e.printStackTrace();
         }
     }
