@@ -12,14 +12,14 @@ public class InfoPanel extends JPanel {
     private int level;
     private int levelTime;
     private int totalTime;
-    private int highScoreLevel;
-    private int highScoreTotal;
+    private HighScores.HighScoreEntry highScoreLevel;
+    private HighScores.HighScoreEntry highScoreTotal;
 
     public InfoPanel(int initialLevel, PlayerTimes playerTimes, HighScores highScores) {
         this.level = initialLevel;
         this.levelTime = 0;
         this.totalTime = playerTimes.lastTotalTime;
-        this.highScoreLevel = highScores.levelHighScores.getOrDefault(initialLevel, Integer.MAX_VALUE);
+        this.highScoreLevel = highScores.levelHighScores.getOrDefault(initialLevel, new HighScores.HighScoreEntry(Integer.MAX_VALUE, ""));
         this.highScoreTotal = highScores.totalHighScore;
         setPreferredSize(new Dimension(0, 100));
         setBackground(Color.LIGHT_GRAY);
@@ -30,7 +30,7 @@ public class InfoPanel extends JPanel {
         repaint();
     }
 
-    public void setTimes(int levelTime, int totalTime, int highScoreLevel, int highScoreTotal) {
+    public void setTimes(int levelTime, int totalTime, HighScores.HighScoreEntry highScoreLevel, HighScores.HighScoreEntry highScoreTotal) {
         this.levelTime = levelTime;
         this.totalTime = totalTime;
         this.highScoreLevel = highScoreLevel;
@@ -63,8 +63,8 @@ public class InfoPanel extends JPanel {
         g.drawString(totalTimeText, totalTimeX, y);
 
         g.setFont(smallFont);
-        String highScoreLevelText = "Meilleur temps niveau : " + (highScoreLevel == Integer.MAX_VALUE ? "N/A" : highScoreLevel + " s");
-        String highScoreTotalText = "Meilleur temps total : " + (highScoreTotal == Integer.MAX_VALUE ? "N/A" : highScoreTotal + " s");
+        String highScoreLevelText = "Meilleur niveau : " + (highScoreLevel.time == Integer.MAX_VALUE ? "N/A" : highScoreLevel.time + " s (" + highScoreLevel.player + ")");
+        String highScoreTotalText = "Meilleur total : " + (highScoreTotal.time == Integer.MAX_VALUE ? "N/A" : highScoreTotal.time + " s (" + highScoreTotal.player + ")");
         int highScoreLevelWidth = g.getFontMetrics().stringWidth(highScoreLevelText);
         int highScoreTotalWidth = g.getFontMetrics().stringWidth(highScoreTotalText);
         int highScoreLevelX = (getWidth() - highScoreLevelWidth) / 2;

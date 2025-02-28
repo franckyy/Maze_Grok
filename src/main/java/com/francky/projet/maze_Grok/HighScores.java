@@ -4,11 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HighScores {
-    public Map<Integer, Integer> levelHighScores; // Niveau -> meilleur temps
-    public int totalHighScore; // Meilleur temps total global
+    public Map<Integer, HighScoreEntry> levelHighScores; // Niveau -> temps + joueur
+    public HighScoreEntry totalHighScore; // Temps total + joueur
 
     public HighScores() {
         this.levelHighScores = new HashMap<>();
-        this.totalHighScore = Integer.MAX_VALUE; // Initialisé à une valeur maximale
+        this.totalHighScore = new HighScoreEntry(Integer.MAX_VALUE, ""); // Initialisé avec un temps max et aucun joueur
+    }
+
+    public static class HighScoreEntry {
+        public int time;
+        public String player;
+
+        public HighScoreEntry(int time, String player) {
+            this.time = time;
+            this.player = player;
+        }
     }
 }

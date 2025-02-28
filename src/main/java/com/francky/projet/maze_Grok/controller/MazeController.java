@@ -69,7 +69,7 @@ public class MazeController {
         levelTime = 0;
         levelTimer = new Timer(1000, e -> {
             levelTime++;
-            infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, Integer.MAX_VALUE), highScores.totalHighScore);
+            infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")), highScores.totalHighScore);
         });
         levelTimer.start();
     }
@@ -307,12 +307,16 @@ public class MazeController {
                     playerTimes.lastLevel = level;
                     playerTimes.lastLevelTime = levelTime;
                     playerTimes.lastTotalTime = totalTime;
-                    int currentHighScore = highScores.levelHighScores.getOrDefault(level, Integer.MAX_VALUE);
-                    highScores.levelHighScores.put(level, Math.min(currentHighScore, levelTime));
-                    highScores.totalHighScore = Math.min(highScores.totalHighScore == Integer.MAX_VALUE ? Integer.MAX_VALUE : highScores.totalHighScore, totalTime);
+                    int currentHighScore = highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")).time;
+                    if (levelTime < currentHighScore) {
+                        highScores.levelHighScores.put(level, new HighScores.HighScoreEntry(levelTime, playerName));
+                    }
+                    if (totalTime < highScores.totalHighScore.time) {
+                        highScores.totalHighScore = new HighScores.HighScoreEntry(totalTime, playerName);
+                    }
                     Main.savePlayerTimes(playerName, level, levelTime, totalTime);
                     Main.saveHighScores(highScores);
-                    infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, Integer.MAX_VALUE), highScores.totalHighScore);
+                    infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")), highScores.totalHighScore);
                 }
                 if (!isAnyDirectionPressed() && !gameOver) {
                     moveTimer.stop();

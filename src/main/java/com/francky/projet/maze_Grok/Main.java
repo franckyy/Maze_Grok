@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import com.francky.projet.maze_Grok.controller.MazeController;
 import com.francky.projet.maze_Grok.model.MazeModel;
@@ -18,21 +19,35 @@ public class Main {
     private static final String PLAYERS_FILE = "/home/oem/git/Maze_Grok/players_level.txt";
     private static final String TIMES_FILE = "/home/oem/git/Maze_Grok/player_times.txt";
     private static final String HIGH_SCORES_FILE = "/home/oem/git/Maze_Grok/high_scores.txt";
+    private static final int MAX_NAME_LENGTH = 10;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> createAndShowGUI());
     }
 
     private static void createAndShowGUI() {
-        String playerName = JOptionPane.showInputDialog(null, "Entrez votre prénom :", "Bienvenue", JOptionPane.PLAIN_MESSAGE);
-        if (playerName == null || playerName.trim().isEmpty()) {
+        JTextField nameField = new JTextField(10);
+        nameField.setDocument(new javax.swing.text.PlainDocument() {
+            @Override
+            public void insertString(int offs, String str, javax.swing.text.AttributeSet a) throws javax.swing.text.BadLocationException {
+                if (str == null || (getLength() + str.length()) > MAX_NAME_LENGTH) {
+                    return;
+                }
+                super.insertString(offs, str, a);
+            }
+        });
+        Object[] message = {"Entrez votre prénom (max 10 caractères) :", nameField};
+        int option = JOptionPane.showConfirmDialog(null, message, "Bienvenue", JOptionPane.OK_CANCEL_OPTION);
+        String playerName = (option == JOptionPane.OK_OPTION) ? nameField.getText().trim() : null;
+
+        if (playerName == null || playerName.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Au revoir !", "Fermeture", JOptionPane.INFORMATION_MESSAGE);
             System.exit(0);
         }
 
         int level = loadPlayerLevel(playerName);
         PlayerTimes playerTimes = loadPlayerTimes(playerName);
-        HighScores highScores = loadHighScores(); // Charger les high scores globaux
+        HighScores highScores = loadHighScores();
         MazeModel model = new MazeModel(level);
         MazeView view = new MazeView(model);
         InfoPanel infoPanel = new InfoPanel(level, playerTimes, highScores);
@@ -90,7 +105,7 @@ public class Main {
                     if (parts.length == 2) {
                         String name = parts[0].trim();
                         String[] times = parts[1].split(",");
-                        if (times.length >= 3) { // Plus de high scores par joueur
+                        if (times.length >= 3) {
                             int lastLevel = Integer.parseInt(times[0].trim());
                             int lastLevelTime = Integer.parseInt(times[1].trim());
                             int lastTotalTime = Integer.parseInt(times[2].trim());
@@ -116,12 +131,16 @@ public class Main {
                 while ((line = reader.readLine()) != null) {
                     String[] parts = line.split("=");
                     if (parts.length == 2) {
-                        if (parts[0].startsWith("level")) {
-                            int level = Integer.parseInt(parts[0].substring(5));
-                            int time = Integer.parseInt(parts[1].trim());
-                            highScores.levelHighScores.put(level, time);
-                        } else if (parts[0].equals("high_total")) {
-                            highScores.totalHighScore = Integer.parseInt(parts[1].trim());
+                        String[] timeAndPlayer = parts[1].split(",");
+                        if (timeAndPlayer.length == 2) {
+                            int time = Integer.parseInt(timeAndPlayer[0].trim());
+                            String player = timeAndPlayer[1].trim();
+                            if (parts[0].startsWith("level")) {
+                                int level = Integer.parseInt(parts[0].substring(5));
+                                highScores.levelHighScores.put(level, new HighScores.HighScoreEntry(time, player));
+                            } else if (parts[0].equals("high_total")) {
+                                highScores.totalHighScore = new HighScores.HighScoreEntry(time, player);
+                            }
                         }
                     }
                 }
@@ -177,11 +196,11 @@ public class Main {
         File file = new File(HIGH_SCORES_FILE);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            for (Map.Entry<Integer, Integer> entry : highScores.levelHighScores.entrySet()) {
-                writer.write("level" + entry.getKey() + "=" + entry.getValue());
+            for (Map.Entry<Integer, HighScores.HighScoreEntry> entry : highScores.levelHighScores.entrySet()) {
+                writer.write("level" + entry.getKey() + "=" + entry.getValue().time + "," + entry.getValue().player);
                 writer.newLine();
             }
-            writer.write("high_total=" + highScores.totalHighScore);
+            writer.write("high_total=" + highScores.totalHighScore.time + "," + highScores.totalHighScore.player);
             writer.newLine();
         } catch (IOException e) {
             System.out.println("Erreur lors de l'écriture dans " + HIGH_SCORES_FILE + " : " + e.getMessage());
