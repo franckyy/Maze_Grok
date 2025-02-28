@@ -13,14 +13,12 @@ public class InfoPanel extends JPanel {
     private int levelTime;
     private int totalTime;
     private HighScores.HighScoreEntry highScoreLevel;
-    private HighScores.HighScoreEntry highScoreTotal;
 
     public InfoPanel(int initialLevel, PlayerTimes playerTimes, HighScores highScores) {
         this.level = initialLevel;
         this.levelTime = 0;
         this.totalTime = playerTimes.lastTotalTime;
         this.highScoreLevel = highScores.levelHighScores.getOrDefault(initialLevel, new HighScores.HighScoreEntry(Integer.MAX_VALUE, ""));
-        this.highScoreTotal = highScores.totalHighScore;
         setPreferredSize(new Dimension(0, 100));
         setBackground(Color.LIGHT_GRAY);
     }
@@ -30,11 +28,10 @@ public class InfoPanel extends JPanel {
         repaint();
     }
 
-    public void setTimes(int levelTime, int totalTime, HighScores.HighScoreEntry highScoreLevel, HighScores.HighScoreEntry highScoreTotal) {
+    public void setTimes(int levelTime, int totalTime, HighScores.HighScoreEntry highScoreLevel) {
         this.levelTime = levelTime;
         this.totalTime = totalTime;
         this.highScoreLevel = highScoreLevel;
-        this.highScoreTotal = highScoreTotal;
         repaint();
     }
 
@@ -64,12 +61,8 @@ public class InfoPanel extends JPanel {
 
         g.setFont(smallFont);
         String highScoreLevelText = "Meilleur niveau : " + (highScoreLevel.time == Integer.MAX_VALUE ? "N/A" : highScoreLevel.time + " s (" + highScoreLevel.player + ")");
-        String highScoreTotalText = "Meilleur total : " + (highScoreTotal.time == Integer.MAX_VALUE ? "N/A" : highScoreTotal.time + " s (" + highScoreTotal.player + ")");
         int highScoreLevelWidth = g.getFontMetrics().stringWidth(highScoreLevelText);
-        int highScoreTotalWidth = g.getFontMetrics().stringWidth(highScoreTotalText);
         int highScoreLevelX = (getWidth() - highScoreLevelWidth) / 2;
-        int highScoreTotalX = getWidth() - highScoreTotalWidth - 20;
         g.drawString(highScoreLevelText, highScoreLevelX, y + 30);
-        g.drawString(highScoreTotalText, highScoreTotalX, y + 30);
     }
 }

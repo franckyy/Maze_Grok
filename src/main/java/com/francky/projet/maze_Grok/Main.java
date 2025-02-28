@@ -130,17 +130,13 @@ public class Main {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     String[] parts = line.split("=");
-                    if (parts.length == 2) {
+                    if (parts.length == 2 && parts[0].startsWith("level")) {
                         String[] timeAndPlayer = parts[1].split(",");
                         if (timeAndPlayer.length == 2) {
                             int time = Integer.parseInt(timeAndPlayer[0].trim());
                             String player = timeAndPlayer[1].trim();
-                            if (parts[0].startsWith("level")) {
-                                int level = Integer.parseInt(parts[0].substring(5));
-                                highScores.levelHighScores.put(level, new HighScores.HighScoreEntry(time, player));
-                            } else if (parts[0].equals("high_total")) {
-                                highScores.totalHighScore = new HighScores.HighScoreEntry(time, player);
-                            }
+                            int level = Integer.parseInt(parts[0].substring(5));
+                            highScores.levelHighScores.put(level, new HighScores.HighScoreEntry(time, player));
                         }
                     }
                 }
@@ -200,8 +196,6 @@ public class Main {
                 writer.write("level" + entry.getKey() + "=" + entry.getValue().time + "," + entry.getValue().player);
                 writer.newLine();
             }
-            writer.write("high_total=" + highScores.totalHighScore.time + "," + highScores.totalHighScore.player);
-            writer.newLine();
         } catch (IOException e) {
             System.out.println("Erreur lors de l'écriture dans " + HIGH_SCORES_FILE + " : " + e.getMessage());
             e.printStackTrace();

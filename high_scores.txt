@@ -1,7 +1,7 @@
-level1=6,ngu
-level2=6,lulu
+level1=5,Francky
+level2=3,gr
 level3=4,lulu
 level4=10,ngu
 level5=10,ngu
 level6=26,ngu
-high_total=6,ngu
+level7=13,Francky

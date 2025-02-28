@@ -69,7 +69,7 @@ public class MazeController {
         levelTime = 0;
         levelTimer = new Timer(1000, e -> {
             levelTime++;
-            infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")), highScores.totalHighScore);
+            infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")));
         });
         levelTimer.start();
     }
@@ -311,12 +311,9 @@ public class MazeController {
                     if (levelTime < currentHighScore) {
                         highScores.levelHighScores.put(level, new HighScores.HighScoreEntry(levelTime, playerName));
                     }
-                    if (totalTime < highScores.totalHighScore.time) {
-                        highScores.totalHighScore = new HighScores.HighScoreEntry(totalTime, playerName);
-                    }
                     Main.savePlayerTimes(playerName, level, levelTime, totalTime);
                     Main.saveHighScores(highScores);
-                    infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")), highScores.totalHighScore);
+                    infoPanel.setTimes(levelTime, totalTime, highScores.levelHighScores.getOrDefault(level, new HighScores.HighScoreEntry(Integer.MAX_VALUE, "")));
                 }
                 if (!isAnyDirectionPressed() && !gameOver) {
                     moveTimer.stop();
