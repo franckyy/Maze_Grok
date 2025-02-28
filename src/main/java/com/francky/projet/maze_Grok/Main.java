@@ -1,11 +1,13 @@
 package com.francky.projet.maze_Grok;
 
 import java.awt.BorderLayout;
+import java.awt.GridBagLayout;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import com.francky.projet.maze_Grok.controller.MazeController;
 import com.francky.projet.maze_Grok.model.MazeModel;
@@ -38,8 +40,14 @@ public class Main {
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setLayout(new BorderLayout());
 
+        // Panneau conteneur pour centrer le labyrinthe
+        JPanel mazeContainer = new JPanel(new GridBagLayout());
+        mazeContainer.setOpaque(false); // Fond transparent pour voir le blanc derrière
+        mazeContainer.add(view); // MazeView reste 600x600
+
+        // Ajouter les panneaux
         frame.add(infoPanel, BorderLayout.NORTH);
-        frame.add(view, BorderLayout.CENTER);
+        frame.add(mazeContainer, BorderLayout.CENTER);
 
         frame.pack();
         frame.setLocationRelativeTo(null);

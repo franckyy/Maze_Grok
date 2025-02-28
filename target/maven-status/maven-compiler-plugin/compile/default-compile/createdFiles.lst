@@ -2,6 +2,7 @@ com/francky/projet/maze_Grok/controller/MazeController.class
 com/francky/projet/maze_Grok/view/MazeView.class
 com/francky/projet/maze_Grok/model/LevelConfig.class
 com/francky/projet/maze_Grok/controller/MazeController$1.class
+com/francky/projet/maze_Grok/view/InfoPanel.class
 com/francky/projet/maze_Grok/Main.class
 com/francky/projet/maze_Grok/model/MazeModel.class
 com/francky/projet/maze_Grok/utils/SoundManager.class
