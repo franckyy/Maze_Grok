@@ -5,11 +5,8 @@ import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
-
 import com.francky.projet.maze_Grok.Main;
 import com.francky.projet.maze_Grok.model.LevelConfig;
 import com.francky.projet.maze_Grok.model.LevelManager;
@@ -17,6 +14,8 @@ import com.francky.projet.maze_Grok.model.MazeModel;
 import com.francky.projet.maze_Grok.utils.SoundManager;
 import com.francky.projet.maze_Grok.view.InfoPanel;
 import com.francky.projet.maze_Grok.view.MazeView;
+import com.francky.projet.maze_Grok.PlayerTimes; // Import ajouté
+import javax.swing.JFrame;
 
 public class MazeController {
     private MazeModel model;
@@ -25,7 +24,7 @@ public class MazeController {
     private Timer moveTimer;
     public Timer wallChangeTimer;
     public Timer trapTimer;
-    private Timer levelTimer; // Chronomètre niveau
+    private Timer levelTimer;
     private boolean[] directions;
     private static final int[] DIRECTION_KEYS = {KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT};
     private SoundManager soundManager;
@@ -36,8 +35,9 @@ public class MazeController {
     private boolean gameOver = false;
     private Map<String, Integer> obstacleOccurrences = new HashMap<>();
     private int currentDirection = 3;
-    private int levelTime = 0; // Temps en secondes pour le niveau en cours
-    private int totalTime = 0; // Temps total cumulé
+    private int levelTime = 0;
+    private int totalTime = 0;
+    private PlayerTimes playerTimes; // Corrigé en PlayerTimes
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName, InfoPanel infoPanel) {
         this.model = model;
@@ -48,10 +48,12 @@ public class MazeController {
         this.directions = new boolean[4];
         this.soundManager = new SoundManager();
         this.levelManager = new LevelManager();
+        this.playerTimes = Main.loadPlayerTimes(playerName);
+        this.totalTime = playerTimes.lastTotalTime;
         LevelConfig config = levelManager.getLevelConfig(level);
         this.lives = config.getLives();
         setupKeyBindings();
-        setupLevelTimer(); // Initialisation du chronomètre
+        setupLevelTimer();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         setupLevelTimers();
     }
@@ -61,10 +63,10 @@ public class MazeController {
     }
 
     private void setupLevelTimer() {
-        levelTime = 0; // Réinitialise à chaque nouveau niveau
-        levelTimer = new Timer(1000, e -> { // Incrémente chaque seconde
+        levelTime = 0;
+        levelTimer = new Timer(1000, e -> {
             levelTime++;
-            infoPanel.setTimes(levelTime, totalTime); // Met à jour InfoPanel
+            infoPanel.setTimes(levelTime, totalTime, playerTimes.highScores.getOrDefault(level, Integer.MAX_VALUE), playerTimes.highScoreTotal);
         });
         levelTimer.start();
     }
@@ -178,6 +180,7 @@ public class MazeController {
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
                     Main.savePlayerLevel(playerName, level);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
                     System.exit(0);
                     return;
                 }
@@ -207,6 +210,7 @@ public class MazeController {
                     if (wallChangeTimer != null) wallChangeTimer.stop();
                     if (trapTimer != null) trapTimer.stop();
                     Main.savePlayerLevel(playerName, level);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
                     System.exit(0);
                 }
 
@@ -293,9 +297,16 @@ public class MazeController {
                     view.setGameWon(true);
                     gameOver = true;
                     stopMovement();
-                    levelTimer.stop(); // Arrête le chronomètre à la fin du niveau
-                    totalTime += levelTime; // Ajoute le temps du niveau au total
-                    infoPanel.setTimes(levelTime, totalTime); // Met à jour l'affichage final
+                    levelTimer.stop();
+                    totalTime += levelTime;
+                    playerTimes.lastLevel = level;
+                    playerTimes.lastLevelTime = levelTime;
+                    playerTimes.lastTotalTime = totalTime;
+                    int currentHighScore = playerTimes.highScores.getOrDefault(level, Integer.MAX_VALUE);
+                    playerTimes.highScores.put(level, Math.min(currentHighScore, levelTime));
+                    playerTimes.highScoreTotal = Math.min(playerTimes.highScoreTotal == 0 ? Integer.MAX_VALUE : playerTimes.highScoreTotal, totalTime);
+                    Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
+                    infoPanel.setTimes(levelTime, totalTime, playerTimes.highScores.getOrDefault(level, Integer.MAX_VALUE), playerTimes.highScoreTotal);
                 }
                 if (!isAnyDirectionPressed() && !gameOver) {
                     moveTimer.stop();
@@ -314,6 +325,7 @@ public class MazeController {
                 if (wallChangeTimer != null) wallChangeTimer.stop();
                 if (trapTimer != null) trapTimer.stop();
                 Main.savePlayerLevel(playerName, level);
+                Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
                 System.exit(0);
             } else {
                 view.startTrapAnimation(() -> {
@@ -332,9 +344,10 @@ public class MazeController {
         MazeModel newModel = new MazeModel(level);
         setModel(newModel);
         infoPanel.setLevel(level);
-        setupLevelTimer(); // Redémarre le chronomètre pour le nouveau niveau
+        setupLevelTimer();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         Main.savePlayerLevel(playerName, level);
+        Main.savePlayerTimes(playerName, level, levelTime, totalTime, playerTimes.highScores, playerTimes.highScoreTotal);
         ((JFrame) view.getTopLevelAncestor()).setTitle("Amazing Maze - Niveau " + level);
     }
 }

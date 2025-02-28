@@ -5,16 +5,21 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import javax.swing.JPanel;
+import com.francky.projet.maze_Grok.PlayerTimes; // Import ajouté
 
 public class InfoPanel extends JPanel {
     private int level;
     private int levelTime;
     private int totalTime;
+    private int highScoreLevel;
+    private int highScoreTotal;
 
-    public InfoPanel(int initialLevel) {
+    public InfoPanel(int initialLevel, PlayerTimes playerTimes) {
         this.level = initialLevel;
         this.levelTime = 0;
-        this.totalTime = 0;
+        this.totalTime = playerTimes.lastTotalTime;
+        this.highScoreLevel = playerTimes.highScores.getOrDefault(initialLevel, 0);
+        this.highScoreTotal = playerTimes.highScoreTotal;
         setPreferredSize(new Dimension(0, 100));
         setBackground(Color.LIGHT_GRAY);
     }
@@ -24,34 +29,46 @@ public class InfoPanel extends JPanel {
         repaint();
     }
 
-    public void setTimes(int levelTime, int totalTime) {
+    public void setTimes(int levelTime, int totalTime, int highScoreLevel, int highScoreTotal) {
         this.levelTime = levelTime;
         this.totalTime = totalTime;
+        this.highScoreLevel = highScoreLevel;
+        this.highScoreTotal = highScoreTotal;
         repaint();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.setFont(new Font("Arial", Font.BOLD, 20));
+
+        Font normalFont = new Font("Arial", Font.BOLD, 20);
+        Font smallFont = new Font("Arial", Font.BOLD, 14);
         g.setColor(Color.BLACK);
 
-        // Niveau à gauche
+        g.setFont(normalFont);
         String levelText = "Niveau : " + level;
-        int levelX = 20; // Marge gauche
-        int textY = getHeight() / 2 + g.getFontMetrics().getAscent() / 2;
-        g.drawString(levelText, levelX, textY);
+        int levelX = 20;
+        int y = getHeight() / 2 - 10;
+        g.drawString(levelText, levelX, y);
 
-        // Temps niveau au centre
         String levelTimeText = "Temps niveau : " + levelTime + " s";
         int levelTimeWidth = g.getFontMetrics().stringWidth(levelTimeText);
         int levelTimeX = (getWidth() - levelTimeWidth) / 2;
-        g.drawString(levelTimeText, levelTimeX, textY);
+        g.drawString(levelTimeText, levelTimeX, y);
 
-        // Temps total à droite
         String totalTimeText = "Temps total : " + totalTime + " s";
         int totalTimeWidth = g.getFontMetrics().stringWidth(totalTimeText);
-        int totalTimeX = getWidth() - totalTimeWidth - 20; // Marge droite
-        g.drawString(totalTimeText, totalTimeX, textY);
+        int totalTimeX = getWidth() - totalTimeWidth - 20;
+        g.drawString(totalTimeText, totalTimeX, y);
+
+        g.setFont(smallFont);
+        String highScoreLevelText = "Meilleur temps niveau : " + (highScoreLevel == Integer.MAX_VALUE ? "N/A" : highScoreLevel + " s");
+        String highScoreTotalText = "Meilleur temps total : " + (highScoreTotal == 0 ? "N/A" : highScoreTotal + " s");
+        int highScoreLevelWidth = g.getFontMetrics().stringWidth(highScoreLevelText);
+        int highScoreTotalWidth = g.getFontMetrics().stringWidth(highScoreTotalText);
+        int highScoreLevelX = (getWidth() - highScoreLevelWidth) / 2;
+        int highScoreTotalX = getWidth() - highScoreTotalWidth - 20;
+        g.drawString(highScoreLevelText, highScoreLevelX, y + 30);
+        g.drawString(highScoreTotalText, highScoreTotalX, y + 30);
     }
 }
