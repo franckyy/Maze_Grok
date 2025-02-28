@@ -6,6 +6,7 @@ df=11
 lilie=6
 mmm=2
 ouioui=14
+gege=4
 mlk=1
 dfr=2
 mlo=4
