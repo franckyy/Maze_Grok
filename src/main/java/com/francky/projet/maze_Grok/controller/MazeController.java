@@ -30,6 +30,7 @@ public class MazeController {
     private LevelManager levelManager;
     private boolean gameOver = false;
     private Map<String, Integer> obstacleOccurrences = new HashMap<>();
+    private int currentDirection = 3; // 0:haut, 1:bas, 2:gauche, 3:droite (initialisé à droite)
 
     public MazeController(MazeModel model, MazeView view, int level, String playerName) {
         this.model = model;
@@ -44,6 +45,10 @@ public class MazeController {
         setupKeyBindings();
         soundManager.playBackgroundMusic("king_tubby_01.wav");
         setupLevelTimers();
+    }
+
+    public int getCurrentDirection() {
+        return currentDirection;
     }
 
     private void setupLevelTimers() {
@@ -150,11 +155,19 @@ public class MazeController {
                 int currentX = model.getPlayerX();
                 int currentY = model.getPlayerY();
 
-                if (key == KeyEvent.VK_UP) directions[0] = true;
-                else if (key == KeyEvent.VK_DOWN) directions[1] = true;
-                else if (key == KeyEvent.VK_LEFT) directions[2] = true;
-                else if (key == KeyEvent.VK_RIGHT) directions[3] = true;
-                else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
+                if (key == KeyEvent.VK_UP) {
+                    directions[0] = true;
+                    currentDirection = 0; // Haut
+                } else if (key == KeyEvent.VK_DOWN) {
+                    directions[1] = true;
+                    currentDirection = 1; // Bas
+                } else if (key == KeyEvent.VK_LEFT) {
+                    directions[2] = true;
+                    currentDirection = 2; // Gauche
+                } else if (key == KeyEvent.VK_RIGHT) {
+                    directions[3] = true;
+                    currentDirection = 3; // Droite
+                } else if (key == KeyEvent.VK_R && model.getPlayerX() == model.getExitX() && model.getPlayerY() == model.getExitY()) {
                     MazeController.this.nextLevel();
                     return;
                 } else if (key == KeyEvent.VK_Q) {
@@ -223,10 +236,10 @@ public class MazeController {
             int targetX = currentX;
             int targetY = currentY;
 
-            if (directions[0] && model.getMazeCell(currentY - 1, currentX) == 0) targetY--;
-            else if (directions[1] && model.getMazeCell(currentY + 1, currentX) == 0) targetY++;
-            else if (directions[2] && model.getMazeCell(currentY, currentX - 1) == 0) targetX--;
-            else if (directions[3] && model.getMazeCell(currentY, currentX + 1) == 0) targetX++;
+            if (directions[0] && model.getMazeCell(currentY - 1, currentX) == 0) targetY--; // Haut
+            else if (directions[1] && model.getMazeCell(currentY + 1, currentX) == 0) targetY++; // Bas
+            else if (directions[2] && model.getMazeCell(currentY, currentX - 1) == 0) targetX--; // Gauche
+            else if (directions[3] && model.getMazeCell(currentY, currentX + 1) == 0) targetX++; // Droite
 
             float dx = (targetX - currentX) * cellSize / (float) steps;
             float dy = (targetY - currentY) * cellSize / (float) steps;

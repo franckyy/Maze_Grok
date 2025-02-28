@@ -25,12 +25,12 @@ public class MazeView extends JPanel {
     private int animationFrame = 0;
     private boolean trapAnimation = false;
     private int trapAnimationStep = 0;
-    private LadybugRenderer ladybugRenderer; // Changé de RobotRenderer à LadybugRenderer
+    private LadybugRenderer ladybugRenderer;
 
     public MazeView(MazeModel model) {
         this.model = model;
         this.soundManager = new SoundManager();
-        this.ladybugRenderer = new LadybugRenderer(); // Changé ici
+        this.ladybugRenderer = new LadybugRenderer();
         setPreferredSize(new Dimension(600, 600));
         initButtons();
     }
@@ -66,20 +66,6 @@ public class MazeView extends JPanel {
             if (controller != null && controller.trapTimer != null) controller.trapTimer.stop();
             System.exit(0);
         });
-    }
-
-    private void restartGame() {
-        soundManager.stopBackgroundMusic();
-        model = new MazeModel(controller.getLevel());
-        if (controller != null) {
-            controller.setModel(model);
-        }
-        gameWon = false;
-        nextLevelButton.setVisible(false);
-        quitButton.setVisible(false);
-        soundManager.playBackgroundMusic("king_tubby_01.wav");
-        repaint();
-        requestFocusInWindow();
     }
 
     public void startTrapAnimation(Runnable onFinished) {
@@ -147,11 +133,12 @@ public class MazeView extends JPanel {
         int exitY = model.getExitY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2;
         g2d.fillOval(exitX, exitY, PLAYER_SIZE, PLAYER_SIZE);
 
-        // Dessin de la coccinelle via LadybugRenderer
+        // Dessin de la coccinelle avec la direction persistante
         int playerX = model.getPlayerX() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetX;
         int playerY = model.getPlayerY() * CELL_SIZE + (CELL_SIZE - PLAYER_SIZE) / 2 + (int) offsetY;
         int playerSize = trapAnimation ? PLAYER_SIZE * trapAnimationStep / 10 : PLAYER_SIZE;
-        ladybugRenderer.draw(g2d, playerX, playerY, playerSize, animationFrame); // Changé ici
+        int direction = (controller != null) ? controller.getCurrentDirection() : 3; // Droite par défaut
+        ladybugRenderer.draw(g2d, playerX, playerY, playerSize, animationFrame, direction);
 
         if (gameWon) {
             g2d.setFont(new Font("Arial", Font.BOLD, 30));
