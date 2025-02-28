@@ -176,10 +176,10 @@ public class MazeController {
                 int key = e.getKeyCode();
 
                 if (key == KeyEvent.VK_E) {
-                    // Réinitialisation d'un fichier txt
-                    String fileToReset = Main.showResetFileDialog();
-                    if (fileToReset != null) {
-                        Main.resetFile(fileToReset);
+                    // Réinitialisation des fichiers sélectionnés avec des cases à cocher
+                    List<String> filesToReset = Main.showResetFileCheckboxDialog();
+                    if (!filesToReset.isEmpty()) {
+                        Main.resetFile(filesToReset);
                         soundManager.stopBackgroundMusic();
                         if (wallChangeTimer != null) wallChangeTimer.stop();
                         if (trapTimer != null) trapTimer.stop();

@@ -1,7 +1,0 @@
-level1=3,francky
-level2=2,francky
-level3=4,Louis
-level4=7,Louis
-level5=11,Lilie
-level6=31,Louis
-level7=24,Louis

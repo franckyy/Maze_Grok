@@ -8,14 +8,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import java.awt.event.ActionEvent;
@@ -282,34 +285,65 @@ public class Main {
         }
     }
 
-    // Nouvelle méthode pour afficher la boîte de dialogue de réinitialisation
-    public static String showResetFileDialog() {
-        String[] options = {"players_level.txt", "high_scores.txt", "player_times.txt", "Annuler"};
-        int choice = JOptionPane.showOptionDialog(null, 
-            "Quel fichier voulez-vous réinitialiser ?", 
-            "Réinitialisation de fichier", 
-            JOptionPane.DEFAULT_OPTION, 
-            JOptionPane.QUESTION_MESSAGE, 
-            null, 
-            options, 
-            options[3]);
-        
-        switch (choice) {
-            case 0: return PLAYERS_FILE;
-            case 1: return HIGH_SCORES_FILE;
-            case 2: return TIMES_FILE;
-            default: return null; // Annuler
-        }
+    // Nouvelle méthode avec cases à cocher pour sélectionner les fichiers à réinitialiser
+    public static List<String> showResetFileCheckboxDialog() {
+        JDialog dialog = new JDialog((JFrame) null, "Réinitialisation de fichiers", true);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel checkBoxPanel = new JPanel();
+        checkBoxPanel.add(new JLabel("Choisissez les fichiers à réinitialiser :"));
+        JCheckBox playersCheck = new JCheckBox("players_level.txt");
+        JCheckBox highScoresCheck = new JCheckBox("high_scores.txt");
+        JCheckBox timesCheck = new JCheckBox("player_times.txt");
+        checkBoxPanel.add(playersCheck);
+        checkBoxPanel.add(highScoresCheck);
+        checkBoxPanel.add(timesCheck);
+        dialog.add(checkBoxPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+        JButton resetButton = new JButton("Réinitialiser");
+        JButton cancelButton = new JButton("Annuler");
+        buttonPanel.add(resetButton);
+        buttonPanel.add(cancelButton);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        final List<String> filesToReset = new ArrayList<>();
+
+        resetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (playersCheck.isSelected()) filesToReset.add(PLAYERS_FILE);
+                if (highScoresCheck.isSelected()) filesToReset.add(HIGH_SCORES_FILE);
+                if (timesCheck.isSelected()) filesToReset.add(TIMES_FILE);
+                dialog.dispose();
+            }
+        });
+
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filesToReset.clear(); // Assure que rien n'est retourné si annulé
+                dialog.dispose();
+            }
+        });
+
+        dialog.pack();
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+
+        return filesToReset;
     }
 
-    // Nouvelle méthode pour réinitialiser un fichier
-    public static void resetFile(String filePath) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            writer.write(""); // Écrit un fichier vide
-            System.out.println("Fichier " + filePath + " réinitialisé avec succès.");
-        } catch (IOException e) {
-            System.out.println("Erreur lors de la réinitialisation de " + filePath + " : " + e.getMessage());
-            e.printStackTrace();
+    // Mise à jour de resetFile pour gérer une liste de fichiers
+    public static void resetFile(List<String> filePaths) {
+        for (String filePath : filePaths) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                writer.write(""); // Écrit un fichier vide
+                System.out.println("Fichier " + filePath + " réinitialisé avec succès.");
+            } catch (IOException e) {
+                System.out.println("Erreur lors de la réinitialisation de " + filePath + " : " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 }
